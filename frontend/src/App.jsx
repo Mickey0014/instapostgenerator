@@ -6,6 +6,7 @@ import ImageEditor from "./components/ImageEditor";
 import PostPreview from "./components/PostPreview"; 
 import VideoStudio from "./components/VideoStudio";
 import { generateFromLink, generateFromPrompt, searchNews } from "./lib/api";
+import { STYLE_OPTIONS } from "./lib/postOptions";
 
 const INITIAL_MESSAGES = [
   {
