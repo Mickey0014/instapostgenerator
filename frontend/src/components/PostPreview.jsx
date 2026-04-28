@@ -14,6 +14,7 @@ export default function PostPreview({
   article,
   design,
   images,
+  providerUsed,
   selectedImageId,
   selectedStyle,
   settings,
@@ -81,6 +82,8 @@ export default function PostPreview({
     link.click();
   };
 
+  const providerLabel = providerUsed ? providerUsed.replace(/^./, (char) => char.toUpperCase()) : "";
+
   return (
     <section className="rounded-[28px] border border-white/15 bg-white/10 p-4 shadow-panel sm:rounded-[32px] sm:p-6">
       <div className="flex flex-col gap-4">
@@ -88,6 +91,11 @@ export default function PostPreview({
           <div>
             <p className="text-xs uppercase tracking-[0.32em] text-slate">Preview</p>
             <h2 className="mt-2 text-xl font-semibold text-paper sm:text-2xl">Canvas</h2>
+            {providerLabel ? (
+              <p className="mt-2 text-xs uppercase tracking-[0.22em] text-slate-300">
+                Provider used: <span className="text-paper">{providerLabel}</span>
+              </p>
+            ) : null}
           </div>
           <button
             type="button"

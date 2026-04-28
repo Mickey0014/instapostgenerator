@@ -3,6 +3,9 @@ function MessageBubble({ message, onArticleSelect, onGeneratePrompt }) {
     const date = new Date(value);
     return Number.isNaN(date.getTime()) ? "" : date.toLocaleDateString();
   };
+  const providerLabel = message.post?.providerUsed
+    ? message.post.providerUsed.replace(/^./, (char) => char.toUpperCase())
+    : "";
 
   if (message.type === "search-results") {
     return (
@@ -69,7 +72,14 @@ function MessageBubble({ message, onArticleSelect, onGeneratePrompt }) {
   if (message.type === "post-ready") {
     return (
       <div className="rounded-[22px] border border-white/10 bg-white/5 p-4">
-        <p className="text-xs uppercase tracking-[0.3em] text-slate">{message.article.source}</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-xs uppercase tracking-[0.3em] text-slate">{message.article.source}</p>
+          {providerLabel ? (
+            <span className="rounded-full border border-white/10 px-2 py-1 text-[10px] uppercase tracking-[0.22em] text-slate-300">
+              {providerLabel}
+            </span>
+          ) : null}
+        </div>
         <h3 className="mt-2 text-base font-semibold text-paper">{message.article.title}</h3>
       </div>
     );

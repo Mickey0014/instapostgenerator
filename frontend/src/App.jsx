@@ -302,6 +302,7 @@ export default function App() {
                   article={activeResult.article}
                   design={activeDesign}
                   images={activeResult.post.images || []}
+                  providerUsed={activeResult.post.providerUsed}
                   selectedImageId={selectedImageId}
                   selectedStyle={selectedStyle}
                   settings={imageSettings}

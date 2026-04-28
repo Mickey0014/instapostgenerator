@@ -546,18 +546,30 @@ async function runConfiguredModel(promptText, fallbackStory) {
 
     try {
       if (activeProvider === "openai") {
-        return await runOpenAiJson(promptText);
+        return {
+          providerUsed: activeProvider,
+          result: await runOpenAiJson(promptText)
+        };
       }
 
       if (activeProvider === "gemini") {
-        return await runGeminiJson(promptText);
+        return {
+          providerUsed: activeProvider,
+          result: await runGeminiJson(promptText)
+        };
       }
 
       if (activeProvider === "groq") {
-        return await runGroqJson(promptText);
+        return {
+          providerUsed: activeProvider,
+          result: await runGroqJson(promptText)
+        };
       }
 
-      return buildFallbackFromStory(fallbackStory);
+      return {
+        providerUsed: "fallback",
+        result: buildFallbackFromStory(fallbackStory)
+      };
     } catch (error) {
       const hasNextProvider = index < providerChain.length - 1;
       const canTryNextProvider =
@@ -597,13 +609,16 @@ async function runConfiguredModel(promptText, fallbackStory) {
 
 async function generateInstagramPackageFromArticle(article) {
   const promptText = buildPrompt({ article });
-  const result = await runConfiguredModel(promptText, article);
+  const { providerUsed, result } = await runConfiguredModel(promptText, article);
 
-  return sanitizeResult(result, {
-    title: article.title,
-    summary: article.excerpt || "",
-    content: article.content || ""
-  });
+  return {
+    ...sanitizeResult(result, {
+      title: article.title,
+      summary: article.excerpt || "",
+      content: article.content || ""
+    }),
+    providerUsed
+  };
 }
 
 async function generateInstagramPackageFromPrompt({ prompt, context, source }) {
@@ -614,13 +629,16 @@ async function generateInstagramPackageFromPrompt({ prompt, context, source }) {
     source: source || "Prompt Brief"
   };
 
-  const result = await runConfiguredModel(promptText, fallbackStory);
+  const { providerUsed, result } = await runConfiguredModel(promptText, fallbackStory);
 
-  return sanitizeResult(result, {
-    title: prompt,
-    summary: context || prompt,
-    content: context || prompt
-  });
+  return {
+    ...sanitizeResult(result, {
+      title: prompt,
+      summary: context || prompt,
+      content: context || prompt
+    }),
+    providerUsed
+  };
 }
 
 module.exports = {
