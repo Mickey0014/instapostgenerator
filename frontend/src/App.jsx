@@ -355,6 +355,23 @@ export default function App() {
                     design={activeDesign}
                     settings={imageSettings}
                     videoOptions={videoOptions}
+                    onDesignChange={(patch) =>
+                      setDesignDrafts((current) => ({
+                        ...current,
+                        [selectedStyle]: {
+                          ...(current[selectedStyle] || { headline: "", subheadline: "" }),
+                          ...patch
+                        }
+                      }))
+                    }
+                    onResetDesign={() =>
+                      setDesignDrafts((current) => ({
+                        ...current,
+                        [selectedStyle]: {
+                          ...(baseDesignVariants[selectedStyle] || { headline: "", subheadline: "" })
+                        }
+                      }))
+                    }
                     onVideoOptionsChange={(patch) =>
                       setVideoOptions((current) => ({
                         ...current,

@@ -86,7 +86,15 @@ async function findPlayableVideoSource(candidateUrls) {
   throw lastError || new Error("Unable to load the extracted video.");
 }
 
-export default function VideoStudio({ article, design, settings, videoOptions, onVideoOptionsChange }) {
+export default function VideoStudio({
+  article,
+  design,
+  settings,
+  videoOptions,
+  onDesignChange,
+  onResetDesign,
+  onVideoOptionsChange
+}) {
   const [rendering, setRendering] = useState(false);
   const [renderedVideoUrl, setRenderedVideoUrl] = useState("");
   const [renderedMimeType, setRenderedMimeType] = useState("video/webm");
@@ -382,6 +390,46 @@ export default function VideoStudio({ article, design, settings, videoOptions, o
             className="w-full rounded-[20px] border border-white/10 bg-ink/60 px-4 py-3 text-white outline-none focus:border-sky/50"
           />
         </label>
+      </div>
+
+      <div className="mt-5 rounded-[24px] border border-white/10 bg-ink/35 p-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-[0.24em] text-slate">Video Overlay</p>
+            <p className="mt-1 text-sm text-slate-300">
+              Edit the headline and subheadline used in the rendered clip.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onResetDesign}
+            className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white transition hover:border-sky/50"
+          >
+            Reset Copy
+          </button>
+        </div>
+
+        <div className="mt-4 grid gap-4">
+          <label className="block">
+            <span className="mb-2 block text-xs uppercase tracking-[0.24em] text-slate">Headline</span>
+            <input
+              type="text"
+              value={design.headline}
+              onChange={(event) => onDesignChange({ headline: event.target.value })}
+              className="w-full rounded-[20px] border border-white/10 bg-ink/60 px-4 py-3 text-white outline-none focus:border-sky/50"
+            />
+          </label>
+
+          <label className="block">
+            <span className="mb-2 block text-xs uppercase tracking-[0.24em] text-slate">Subheadline</span>
+            <input
+              type="text"
+              value={design.subheadline}
+              onChange={(event) => onDesignChange({ subheadline: event.target.value })}
+              className="w-full rounded-[20px] border border-white/10 bg-ink/60 px-4 py-3 text-white outline-none focus:border-sky/50"
+            />
+          </label>
+        </div>
       </div>
 
       {article.video?.clip?.reason ? (
