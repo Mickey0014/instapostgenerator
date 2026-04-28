@@ -297,14 +297,8 @@ export default function VideoStudio({ article, design, settings, videoOptions, o
     <section className="rounded-[28px] border border-white/10 bg-white/5 p-4 shadow-panel sm:rounded-[32px] sm:p-6">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <div className="inline-flex rounded-full border border-gold/30 bg-gold/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-gold">
-            Step 4
-          </div>
-          <p className="mt-3 text-xs uppercase tracking-[0.32em] text-slate">Video Version</p>
-          <h2 className="mt-2 font-display text-2xl text-paper sm:text-3xl">Overlay Video Clip</h2>
-          <p className="mt-2 text-sm text-slate-300">
-            Video clips now render with the headline and subheadline above the video frame.
-          </p>
+          <p className="text-xs uppercase tracking-[0.32em] text-slate">Video</p>
+          <h2 className="mt-2 text-xl font-semibold text-paper sm:text-2xl">Clip</h2>
         </div>
         <button
           type="button"

@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
 
 import {
-  buildDisplayCopy,
   drawInstagramTemplate,
   ensureCanvasFontsLoaded,
   INSTAGRAM_EXPORT_ASPECT_CLASS,
@@ -26,8 +25,6 @@ export default function PostPreview({
     () => images.find((image) => image.id === selectedImageId) || images[0] || null,
     [images, selectedImageId]
   );
-
-  const displayCopy = useMemo(() => buildDisplayCopy(article, design), [article, design]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -89,11 +86,8 @@ export default function PostPreview({
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <div className="inline-flex rounded-full border border-gold/30 bg-gold/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-gold">
-              Step 3
-            </div>
-            <p className="mt-3 text-xs uppercase tracking-[0.32em] text-slate">Final Preview</p>
-            <h2 className="mt-2 font-display text-2xl text-paper sm:text-3xl">Instagram Canvas</h2>
+            <p className="text-xs uppercase tracking-[0.32em] text-slate">Preview</p>
+            <h2 className="mt-2 text-xl font-semibold text-paper sm:text-2xl">Canvas</h2>
           </div>
           <button
             type="button"
@@ -103,31 +97,10 @@ export default function PostPreview({
             Download Image
           </button>
         </div>
-
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-[20px] border border-white/10 bg-ink/35 px-4 py-3">
-            <p className="text-[11px] uppercase tracking-[0.22em] text-slate">Tone</p>
-            <p className="mt-2 text-sm font-semibold text-paper">{getStyleLabel(selectedStyle)}</p>
-          </div>
-          <div className="rounded-[20px] border border-white/10 bg-ink/35 px-4 py-3">
-            <p className="text-[11px] uppercase tracking-[0.22em] text-slate">Template</p>
-            <p className="mt-2 text-sm font-semibold text-paper">{getTemplateLabel(settings.template)}</p>
-          </div>
-          <div className="rounded-[20px] border border-white/10 bg-ink/35 px-4 py-3">
-            <p className="text-[11px] uppercase tracking-[0.22em] text-slate">Font</p>
-            <p className="mt-2 text-sm font-semibold text-paper">{settings.fontFamily}</p>
-          </div>
-          <div className="rounded-[20px] border border-white/10 bg-ink/35 px-4 py-3">
-            <p className="text-[11px] uppercase tracking-[0.22em] text-slate">Source</p>
-            <p className="mt-2 text-sm font-semibold text-paper">
-              {article.sourceCount ? `${article.sourceCount} sources` : article.source}
-            </p>
-          </div>
-        </div>
-
-        <div>
-          <p className="text-sm text-slate-300">Auto headline</p>
-          <p className="mt-2 text-base leading-7 text-paper">{displayCopy.headline}</p>
+        <div className="flex flex-wrap gap-2 text-xs uppercase tracking-[0.22em] text-slate">
+          <span>{getStyleLabel(selectedStyle)}</span>
+          <span>{getTemplateLabel(settings.template)}</span>
+          <span>{settings.fontFamily}</span>
         </div>
       </div>
 

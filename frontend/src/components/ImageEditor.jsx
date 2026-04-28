@@ -153,25 +153,14 @@ export default function ImageEditor({
 
   return (
     <section className="rounded-[28px] border border-white/10 bg-white/5 p-4 shadow-panel sm:rounded-[32px] sm:p-6">
-      <div className="inline-flex rounded-full border border-gold/30 bg-gold/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-gold">
-        Step 2
-      </div>
-      <p className="mt-3 text-xs uppercase tracking-[0.32em] text-slate">Post Layout</p>
-      <h2 className="mt-2 font-display text-2xl text-paper sm:text-3xl">Headline Overlay</h2>
-      <p className="mt-2 text-sm text-slate-300">
-        Headline and subheadline are now auto-generated for each caption tone. You can fine-tune the
-        active {styleLabel.toLowerCase()} version or reset it to the AI draft.
-      </p>
+      <p className="text-xs uppercase tracking-[0.32em] text-slate">Layout</p>
+      <h2 className="mt-2 text-xl font-semibold text-paper sm:text-2xl">Overlay</h2>
 
       <div className="mt-5 grid gap-4">
         <div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <span className="block text-xs uppercase tracking-[0.24em] text-slate">Template Gallery</span>
-              <p className="mt-2 text-sm text-slate-300">
-                Choose the layout that fits this story best. The selected overlay copy will carry into the
-                preview and export.
-              </p>
+              <span className="block text-xs uppercase tracking-[0.24em] text-slate">Template</span>
             </div>
             <button
               type="button"
@@ -194,11 +183,8 @@ export default function ImageEditor({
           </div>
         </div>
 
-        <div className="rounded-[24px] border border-white/10 bg-ink/35 px-4 py-4">
-          <span className="block text-xs uppercase tracking-[0.24em] text-slate">Active Tone</span>
-          <div className="mt-3 inline-flex rounded-full border border-gold/30 bg-gold/10 px-4 py-2 text-sm font-semibold text-gold">
-            {styleLabel} headline and subheadline
-          </div>
+        <div className="rounded-[24px] border border-white/10 bg-ink/35 px-4 py-4 text-sm font-semibold text-gold">
+          {styleLabel}
         </div>
 
         <label className="block">
@@ -275,8 +261,7 @@ export default function ImageEditor({
 
         {videoAvailable ? (
           <div className="rounded-[24px] border border-sky/20 bg-sky/10 px-4 py-3 text-sm leading-6 text-sky">
-            This article includes a video. The same tone-specific headline, subheadline, and template can
-            be applied to a trimmed clip below.
+            Video available below.
           </div>
         ) : null}
       </div>
