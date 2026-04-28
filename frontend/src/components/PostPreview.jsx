@@ -1,0 +1,186 @@
+import { useEffect, useMemo, useRef } from "react";
+
+import {
+  buildDisplayCopy,
+  drawInstagramTemplate,
+  ensureCanvasFontsLoaded,
+  INSTAGRAM_EXPORT_ASPECT_CLASS,
+  INSTAGRAM_EXPORT_HEIGHT,
+  INSTAGRAM_EXPORT_WIDTH,
+  loadImage
+} from "../lib/postRenderer";
+import { getStyleLabel, getTemplateLabel } from "../lib/postOptions";
+
+export default function PostPreview({
+  article,
+  design,
+  images,
+  selectedImageId,
+  selectedStyle,
+  settings,
+  onSelectImage
+}) {
+  const canvasRef = useRef(null);
+
+  const selectedImage = useMemo(
+    () => images.find((image) => image.id === selectedImageId) || images[0] || null,
+    [images, selectedImageId]
+  );
+
+  const displayCopy = useMemo(() => buildDisplayCopy(article, design), [article, design]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const context = canvas.getContext("2d");
+    let cancelled = false;
+
+    async function renderCanvas() {
+      try {
+        await ensureCanvasFontsLoaded(settings.fontFamily);
+        const image = await loadImage(selectedImage?.proxyUrl);
+
+        if (cancelled) {
+          return;
+        }
+
+        drawInstagramTemplate(context, {
+          article,
+          design,
+          settings,
+          media: image,
+          mediaMeta: selectedImage,
+          width: canvas.width,
+          height: canvas.height
+        });
+      } catch (error) {
+        if (cancelled) {
+          return;
+        }
+
+        drawInstagramTemplate(context, {
+          article,
+          design,
+          settings,
+          media: null,
+          mediaMeta: selectedImage,
+          width: canvas.width,
+          height: canvas.height
+        });
+      }
+    }
+
+    renderCanvas();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [article, design, selectedImage, settings]);
+
+  const handleDownload = () => {
+    const canvas = canvasRef.current;
+    const link = document.createElement("a");
+    link.download = "instagram-post.png";
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+  };
+
+  return (
+    <section className="rounded-[28px] border border-white/15 bg-white/10 p-4 shadow-panel sm:rounded-[32px] sm:p-6">
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <div className="inline-flex rounded-full border border-gold/30 bg-gold/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-gold">
+              Step 3
+            </div>
+            <p className="mt-3 text-xs uppercase tracking-[0.32em] text-slate">Final Preview</p>
+            <h2 className="mt-2 font-display text-2xl text-paper sm:text-3xl">Instagram Canvas</h2>
+          </div>
+          <button
+            type="button"
+            onClick={handleDownload}
+            className="w-full rounded-full bg-coral px-5 py-3 text-sm font-semibold text-ink transition hover:brightness-110 sm:w-auto"
+          >
+            Download Image
+          </button>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-[20px] border border-white/10 bg-ink/35 px-4 py-3">
+            <p className="text-[11px] uppercase tracking-[0.22em] text-slate">Tone</p>
+            <p className="mt-2 text-sm font-semibold text-paper">{getStyleLabel(selectedStyle)}</p>
+          </div>
+          <div className="rounded-[20px] border border-white/10 bg-ink/35 px-4 py-3">
+            <p className="text-[11px] uppercase tracking-[0.22em] text-slate">Template</p>
+            <p className="mt-2 text-sm font-semibold text-paper">{getTemplateLabel(settings.template)}</p>
+          </div>
+          <div className="rounded-[20px] border border-white/10 bg-ink/35 px-4 py-3">
+            <p className="text-[11px] uppercase tracking-[0.22em] text-slate">Font</p>
+            <p className="mt-2 text-sm font-semibold text-paper">{settings.fontFamily}</p>
+          </div>
+          <div className="rounded-[20px] border border-white/10 bg-ink/35 px-4 py-3">
+            <p className="text-[11px] uppercase tracking-[0.22em] text-slate">Source</p>
+            <p className="mt-2 text-sm font-semibold text-paper">
+              {article.sourceCount ? `${article.sourceCount} sources` : article.source}
+            </p>
+          </div>
+        </div>
+
+        <div>
+          <p className="text-sm text-slate-300">Auto headline</p>
+          <p className="mt-2 text-base leading-7 text-paper">{displayCopy.headline}</p>
+        </div>
+      </div>
+
+      <div className="mt-5 overflow-hidden rounded-[24px] border border-white/10 bg-ink sm:rounded-[28px]">
+        <canvas
+          ref={canvasRef}
+          width={INSTAGRAM_EXPORT_WIDTH}
+          height={INSTAGRAM_EXPORT_HEIGHT}
+          className={`h-auto w-full ${INSTAGRAM_EXPORT_ASPECT_CLASS}`}
+        />
+      </div>
+
+      <div className="mt-5">
+        <p className="text-xs uppercase tracking-[0.32em] text-slate">Suggested Images</p>
+        <div className="mt-3 grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 xl:grid-cols-4">
+          {images.length ? (
+            images.map((image) => (
+              <button
+                key={image.id}
+                type="button"
+                onClick={() => onSelectImage(image.id)}
+                className={`overflow-hidden rounded-[24px] border text-left transition ${
+                  selectedImage?.id === image.id
+                    ? "border-gold bg-white/10 shadow-panel"
+                    : "border-white/10 bg-white/5 hover:border-sky/40"
+                }`}
+              >
+                <img src={image.proxyUrl} alt={image.alt} className="aspect-square w-full object-cover" />
+                <div className="p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-xs uppercase tracking-[0.24em] text-slate">{image.source}</p>
+                    {selectedImage?.id === image.id ? (
+                      <span className="rounded-full bg-gold px-2 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-ink">
+                        Active
+                      </span>
+                    ) : null}
+                  </div>
+                  {image.textRisk ? (
+                    <p className="mt-1 text-[11px] uppercase tracking-[0.18em] text-gold">
+                      Text in source image
+                    </p>
+                  ) : null}
+                  <p className="mt-2 text-sm text-paper">{image.alt}</p>
+                </div>
+              </button>
+            ))
+          ) : (
+            <div className="rounded-[24px] border border-dashed border-white/10 p-6 text-sm text-slate">
+              Add `UNSPLASH_ACCESS_KEY` or `PEXELS_API_KEY` to load stock-photo suggestions.
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
