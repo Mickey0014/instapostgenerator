@@ -13,8 +13,32 @@ const { extractVideoContext, formatTimestamp, transcriptToText } = require("./vi
 
 const DEFAULT_HEADERS = {
   "User-Agent":
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+  Accept:
+    "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+  "Accept-Language": "en-US,en;q=0.9",
+  "Cache-Control": "no-cache",
+  Pragma: "no-cache",
+  "Upgrade-Insecure-Requests": "1"
 };
+
+function buildRequestHeaders(url) {
+  return {
+    ...DEFAULT_HEADERS,
+    Referer: `${url.protocol}//${url.host}/`
+  };
+}
+
+function buildBlockedArticleError(url, statusCode) {
+  const hostname = cleanText(url.hostname || "").replace(/^www\./, "");
+  const error = new Error(
+    statusCode === 403
+      ? `This publisher blocked article extraction from the server (403) for ${hostname}. Try a different source for this story, or use source search first and generate from the summarized results.`
+      : `I couldn't access this article from ${hostname} right now (HTTP ${statusCode}). Try another source or use source search first.`
+  );
+  error.status = statusCode;
+  return error;
+}
 
 function getMeta(document, key, attribute = "property") {
   const selector = `meta[${attribute}="${key}"]`;
@@ -298,10 +322,13 @@ async function extractArticleFromUrl(url) {
   const response = await axios.get(validatedUrl.toString(), {
     timeout: 20000,
     proxy: false,
-    headers: DEFAULT_HEADERS
+    maxRedirects: 5,
+    responseType: "text",
+    headers: buildRequestHeaders(validatedUrl),
+    validateStatus: (status) => status >= 200 && status < 500
   });
 
-  const dom = new JSDOM(response.data, { url: validatedUrl.toString() });
+  const dom = new JSDOM(String(response.data || ""), { url: validatedUrl.toString() });
   const document = dom.window.document;
   const readable = new Readability(document).parse();
   const metaDescription =
@@ -337,6 +364,10 @@ async function extractArticleFromUrl(url) {
       readable?.textContent ||
       dedupeStrings([preferredDescription, fallbackVideoText].filter(Boolean)).join(" ")
   );
+
+  if ([401, 403, 451].includes(response.status) && !content) {
+    throw buildBlockedArticleError(validatedUrl, response.status);
+  }
 
   if (!content) {
     const extractionError = new Error(
