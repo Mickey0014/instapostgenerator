@@ -430,51 +430,100 @@ select {
   position: relative;
   display: inline-flex;
   align-items: baseline;
-  gap: 0.5rem;
-  font-family: "Newsreader", serif;
-  font-size: clamp(1.9rem, 3.4vw, 3rem);
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  color: #f8f4ec;
-  text-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.16),
-    0 10px 24px rgba(4, 10, 20, 0.44);
-  animation: logoFloat 4.8s ease-in-out infinite;
+  gap: 0.42rem;
+  padding: 0.7rem 1.3rem 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02)),
+    linear-gradient(135deg, rgba(255, 209, 160, 0.12), rgba(110, 169, 255, 0.08) 48%, rgba(255, 140, 109, 0.12));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 18px 36px rgba(3, 8, 15, 0.3);
+  isolation: isolate;
+}
+
+.insta-pg-logo::before {
+  content: "";
+  position: absolute;
+  left: 1rem;
+  right: 1rem;
+  bottom: 0.46rem;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 214, 170, 0.56), rgba(148, 204, 255, 0.52), rgba(255, 255, 255, 0));
+  opacity: 0.72;
+}
+
+.insta-pg-logo::after {
+  content: "";
+  position: absolute;
+  inset: 0.22rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  pointer-events: none;
 }
 
 .insta-pg-logo__word,
 .insta-pg-logo__mark {
   position: relative;
   display: inline-block;
+  white-space: nowrap;
 }
 
 .insta-pg-logo__word::after,
 .insta-pg-logo__mark::after {
-  content: attr(class);
+  content: "";
   position: absolute;
-  inset: 0;
+  inset: auto 8% -0.18rem 8%;
+  height: 0.9rem;
   z-index: -1;
-  transform: translateY(6px);
-  opacity: 0.16;
-  filter: blur(10px);
+  border-radius: 999px;
+  filter: blur(14px);
+}
+
+.insta-pg-logo__word {
+  font-family: "Fulbo Premier", "Arno Pro", serif;
+  font-size: clamp(2.05rem, 3.4vw, 3.35rem);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  line-height: 0.9;
+  transform: translateY(0.02em);
+  color: transparent;
+  background:
+    linear-gradient(180deg, #fffdf8 0%, #ffe7c5 30%, #f3bb7f 56%, #fff8eb 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.32),
+    0 2px 0 rgba(241, 191, 138, 0.36),
+    0 3px 0 rgba(174, 118, 71, 0.34),
+    0 16px 24px rgba(4, 10, 20, 0.38);
 }
 
 .insta-pg-logo__word::after {
-  content: "Insta";
-  color: #9fc9ff;
+  background: radial-gradient(circle, rgba(255, 210, 158, 0.52), rgba(255, 210, 158, 0));
 }
 
 .insta-pg-logo__mark {
-  color: #ff9a7e;
-  transform: translateY(-1px);
+  font-family: "Epica Pro", "Gilroy", sans-serif;
+  font-size: clamp(1.22rem, 2vw, 1.66rem);
+  font-weight: 800;
+  letter-spacing: 0.34em;
+  line-height: 1;
+  padding-left: 0.34rem;
+  color: transparent;
+  background: linear-gradient(180deg, #dff3ff 0%, #9ed1ff 42%, #5da3fb 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  transform: translateY(-0.34em);
   text-shadow:
-    0 1px 0 rgba(255, 214, 202, 0.24),
-    0 12px 28px rgba(255, 122, 89, 0.3);
+    0 1px 0 rgba(230, 244, 255, 0.28),
+    0 2px 0 rgba(77, 121, 179, 0.4),
+    0 10px 22px rgba(49, 133, 255, 0.24);
 }
 
 .insta-pg-logo__mark::after {
-  content: "PG";
-  color: #ff7a59;
+  background: radial-gradient(circle, rgba(108, 181, 255, 0.44), rgba(108, 181, 255, 0));
 }
 
 .action-tile {
