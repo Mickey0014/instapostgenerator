@@ -78,6 +78,44 @@ function MessageBubble({ message, onArticleSelect, onGeneratePrompt }) {
   return <p className="text-sm leading-7 text-slate-100">{message.text}</p>;
 }
 
+function HistorySummary({ message, onArticleSelect, onGeneratePrompt }) {
+  if (message.type === "search-results") {
+    return (
+      <details className="rounded-[20px] border border-white/10 bg-white/5">
+        <summary className="cursor-pointer list-none px-4 py-3 text-sm font-semibold text-paper">
+          Previous sources
+        </summary>
+        <div className="border-t border-white/10 px-4 py-4">
+          <MessageBubble
+            message={message}
+            onArticleSelect={onArticleSelect}
+            onGeneratePrompt={onGeneratePrompt}
+          />
+        </div>
+      </details>
+    );
+  }
+
+  if (message.type === "post-ready") {
+    return (
+      <details className="rounded-[20px] border border-white/10 bg-white/5">
+        <summary className="cursor-pointer list-none px-4 py-3 text-sm font-semibold text-paper">
+          Previous post
+        </summary>
+        <div className="border-t border-white/10 px-4 py-4">
+          <MessageBubble
+            message={message}
+            onArticleSelect={onArticleSelect}
+            onGeneratePrompt={onGeneratePrompt}
+          />
+        </div>
+      </details>
+    );
+  }
+
+  return null;
+}
+
 export default function ChatUI({
   input,
   loading,
@@ -90,6 +128,14 @@ export default function ChatUI({
 }) {
   const trimmedInput = input.trim();
   const inputLooksLikeUrl = /^https?:\/\//i.test(trimmedInput);
+  const latestSearchIndex = messages.reduce(
+    (latestIndex, message, index) => (message.type === "search-results" ? index : latestIndex),
+    -1
+  );
+  const latestPostIndex = messages.reduce(
+    (latestIndex, message, index) => (message.type === "post-ready" ? index : latestIndex),
+    -1
+  );
 
   return (
     <section className="min-w-0 flex min-h-[65vh] flex-col rounded-[28px] border border-white/10 bg-ink/80 shadow-panel backdrop-blur sm:min-h-[72vh] sm:rounded-[32px]">
@@ -101,22 +147,38 @@ export default function ChatUI({
       </div>
 
       <div className="min-w-0 flex-1 space-y-3 overflow-y-auto px-3 py-4 sm:px-5 sm:py-5">
-        {messages.map((message) => (
-          <article
-            key={message.id}
-            className={`min-w-0 max-w-3xl rounded-[20px] border px-4 py-3 sm:px-4 ${
-              message.role === "user"
-                ? "ml-auto border-coral/40 bg-coral/10"
-                : "border-white/10 bg-white/5"
-            }`}
-          >
-            <MessageBubble
-              message={message}
-              onArticleSelect={onArticleSelect}
-              onGeneratePrompt={onGeneratePrompt}
-            />
-          </article>
-        ))}
+        {messages.map((message, index) => {
+          const isOlderSearch = message.type === "search-results" && index !== latestSearchIndex;
+          const isOlderPost = message.type === "post-ready" && index !== latestPostIndex;
+
+          if (isOlderSearch || isOlderPost) {
+            return (
+              <HistorySummary
+                key={message.id}
+                message={message}
+                onArticleSelect={onArticleSelect}
+                onGeneratePrompt={onGeneratePrompt}
+              />
+            );
+          }
+
+          return (
+            <article
+              key={message.id}
+              className={`min-w-0 max-w-3xl rounded-[20px] border px-4 py-3 sm:px-4 ${
+                message.role === "user"
+                  ? "ml-auto border-coral/40 bg-coral/10"
+                  : "border-white/10 bg-white/5"
+              }`}
+            >
+              <MessageBubble
+                message={message}
+                onArticleSelect={onArticleSelect}
+                onGeneratePrompt={onGeneratePrompt}
+              />
+            </article>
+          );
+        })}
       </div>
 
       <form onSubmit={onSubmit} className="border-t border-white/10 p-4 sm:p-5">
