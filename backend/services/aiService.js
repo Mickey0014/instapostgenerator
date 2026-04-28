@@ -404,6 +404,10 @@ function buildProviderChain() {
     }
   });
 
+  if (!chain.includes("fallback")) {
+    chain.push("fallback");
+  }
+
   return chain.length ? chain : ["fallback"];
 }
 
@@ -555,15 +559,24 @@ async function runConfiguredModel(promptText, fallbackStory) {
 
       return buildFallbackFromStory(fallbackStory);
     } catch (error) {
+      const hasNextProvider = index < providerChain.length - 1;
       const canTryNextProvider =
-        index < providerChain.length - 1 && activeProvider === provider && isRateLimitError(error);
+        hasNextProvider &&
+        ((activeProvider === provider && isRateLimitError(error)) ||
+          (activeProvider !== provider && activeProvider !== "fallback"));
 
       if (canTryNextProvider) {
         const nextProvider = providerChain[index + 1];
-        previousRateLimitError = error;
-        console.warn(
-          `[ai] Provider "${activeProvider}" hit a rate limit or quota error. Falling back to "${nextProvider}".`
-        );
+        if (isRateLimitError(error)) {
+          previousRateLimitError = error;
+          console.warn(
+            `[ai] Provider "${activeProvider}" hit a rate limit or quota error. Falling back to "${nextProvider}".`
+          );
+        } else {
+          console.warn(
+            `[ai] Provider "${activeProvider}" failed: ${error.message}. Falling back to "${nextProvider}".`
+          );
+        }
         continue;
       }
 
