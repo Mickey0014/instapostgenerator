@@ -139,14 +139,10 @@ export default function ChatUI({
 
   return (
     <section className="min-w-0 flex min-h-[65vh] flex-col rounded-[28px] border border-white/10 bg-ink/80 shadow-panel backdrop-blur sm:min-h-[72vh] sm:rounded-[32px]">
-      <div className="relative flex items-center justify-end border-b border-white/10 px-4 py-4 sm:px-6">
-        <div className="pointer-events-none absolute inset-x-0 flex justify-center">
-          <h1 className="font-display text-xl font-semibold tracking-[0.08em] text-paper sm:text-2xl">
-            Insta <span className="text-coral">PG</span>
-          </h1>
-        </div>
-        <div className="w-fit rounded-full border border-sky/30 bg-sky/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-sky">
-          {loading ? "Generating" : "Ready"}
+      <div className="flex justify-center border-b border-white/10 px-4 py-5 sm:px-6 sm:py-6">
+        <div className="insta-pg-logo" aria-label="Insta PG">
+          <span className="insta-pg-logo__word">Insta</span>
+          <span className="insta-pg-logo__mark">PG</span>
         </div>
       </div>
 
@@ -198,16 +194,16 @@ export default function ChatUI({
             type="button"
             onClick={onSearchSources}
             disabled={loading || !trimmedInput || inputLooksLikeUrl}
-            className="rounded-[22px] border border-coral/40 bg-coral/10 px-4 py-4 text-left transition hover:bg-coral hover:text-ink disabled:cursor-not-allowed disabled:opacity-60"
+            className="action-tile rounded-[22px] px-4 py-4 text-left disabled:cursor-not-allowed disabled:opacity-60"
           >
-            <span className="block text-sm font-semibold text-coral">Find Sources</span>
+            <span className="action-tile__label block text-sm font-semibold">Find Sources</span>
           </button>
           <button
             type="submit"
             disabled={loading}
-            className="rounded-[22px] border border-coral/40 bg-coral/10 px-4 py-4 text-left transition hover:bg-coral hover:text-ink disabled:cursor-not-allowed disabled:opacity-60"
+            className="action-tile rounded-[22px] px-4 py-4 text-left disabled:cursor-not-allowed disabled:opacity-60"
           >
-            <span className="block text-sm font-semibold text-coral">
+            <span className="action-tile__label block text-sm font-semibold">
               {loading ? "Working..." : "Generate Post"}
             </span>
           </button>
