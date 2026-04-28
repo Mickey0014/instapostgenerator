@@ -1,5 +1,6 @@
 const { buildMultiSourceStory, searchNewsByTopic } = require("../services/newsService");
 const {
+  deriveTopicFromUrl,
   extractArticleFromUrl,
   normalizeStorySeed
 } = require("../services/articleExtractor");
@@ -12,6 +13,40 @@ const {
   fetchRelevantImages,
   proxyRemoteAsset
 } = require("../services/imageService");
+
+function shouldFallbackToSourceSummary(error) {
+  return [401, 403, 422, 451].includes(Number(error?.status || error?.response?.status || 0));
+}
+
+async function buildFallbackStoryFromUrl(url) {
+  const query = deriveTopicFromUrl(url);
+
+  if (!query) {
+    const fallbackError = new Error("I couldn't derive a topic from that blocked article link.");
+    fallbackError.status = 422;
+    throw fallbackError;
+  }
+
+  const sourceArticles = await searchNewsByTopic(query);
+
+  if (!sourceArticles.length) {
+    const fallbackError = new Error("I couldn't find related coverage to build a fallback post.");
+    fallbackError.status = 422;
+    throw fallbackError;
+  }
+
+  const article = buildMultiSourceStory(query, sourceArticles);
+
+  return {
+    article: {
+      ...article,
+      url,
+      source: `${article.source} (related coverage)`,
+      sourceUrl: url
+    },
+    query
+  };
+}
 
 async function healthCheck(req, res) {
   const status = getReadinessStatus();
@@ -90,14 +125,32 @@ async function generateFromLink(req, res, next) {
       return res.status(400).json({ error: "A news article URL is required." });
     }
 
-    const article = await extractArticleFromUrl(url);
-    const post = await generateInstagramPackageFromArticle(article);
+    let article;
+    let post;
+
+    try {
+      article = await extractArticleFromUrl(url);
+      post = await generateInstagramPackageFromArticle(article);
+    } catch (error) {
+      if (!shouldFallbackToSourceSummary(error)) {
+        throw error;
+      }
+
+      const fallback = await buildFallbackStoryFromUrl(url);
+      article = fallback.article;
+      post = await generateInstagramPackageFromPrompt({
+        prompt: fallback.query,
+        context: article.content,
+        source: article.source
+      });
+    }
+
     const images = await fetchRelevantImages({
       title: article.title,
       summary: post.summary,
       keywords: post.keywords,
       fallbackImage: article.image,
-      preferredQuery: post.suggestedImageQuery,
+      preferredQuery: post.suggestedImageQuery || article.title,
       sourceImages: article.sourceArticles || []
     });
 

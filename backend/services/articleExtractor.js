@@ -305,6 +305,45 @@ function normalizeStorySeed({ title, content, source, url, image, publishedAt, a
   };
 }
 
+function slugToWords(value) {
+  return cleanText(
+    String(value || "")
+      .replace(/\.(html|htm|amp|cms|php|aspx?)$/i, " ")
+      .replace(/[-_+]+/g, " ")
+      .replace(/\b\d+\b/g, " ")
+  );
+}
+
+function cleanFallbackQuery(value) {
+  return cleanText(value)
+    .replace(/\b(breaking|live|latest|update|news|story|article|video|photos?)\b/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function deriveTopicFromUrl(url) {
+  let validatedUrl;
+
+  try {
+    validatedUrl = typeof url === "string" ? new URL(url) : url;
+  } catch (error) {
+    return "";
+  }
+
+  const pathSegments = validatedUrl.pathname
+    .split("/")
+    .map((segment) => slugToWords(decodeURIComponent(segment)))
+    .filter(Boolean);
+  const bestPathSegment = [...pathSegments].reverse().find((segment) => segment.split(/\s+/).length >= 3) || "";
+  const domainHint = cleanText(validatedUrl.hostname.replace(/^www\./, "").split(".").slice(0, -1).join(" "));
+  const query = cleanFallbackQuery(bestPathSegment || pathSegments.join(" ") || domainHint);
+
+  return query
+    .split(/\s+/)
+    .slice(0, 10)
+    .join(" ");
+}
+
 async function extractArticleFromUrl(url) {
   let validatedUrl;
 
@@ -395,6 +434,7 @@ async function extractArticleFromUrl(url) {
 }
 
 module.exports = {
+  deriveTopicFromUrl,
   extractArticleFromUrl,
   normalizeStorySeed
 };
