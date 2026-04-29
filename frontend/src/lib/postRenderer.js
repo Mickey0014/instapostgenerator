@@ -1055,7 +1055,9 @@ export function loadImage(src) {
     }
 
     const image = new Image();
-    image.crossOrigin = "anonymous";
+    if (/^https?:\/\//i.test(src)) {
+      image.crossOrigin = "anonymous";
+    }
     image.onload = () => resolve(image);
     image.onerror = reject;
     image.src = src;

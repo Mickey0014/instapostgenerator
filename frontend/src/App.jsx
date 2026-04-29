@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import CaptionSelector from "./components/CaptionSelector";
 import ChatUI from "./components/ChatUI";
@@ -97,12 +97,25 @@ export default function App() {
   const [designDrafts, setDesignDrafts] = useState(createEmptyDesignVariants);
   const [imageSettings, setImageSettings] = useState(DEFAULT_SETTINGS);
   const [selectedImageId, setSelectedImageId] = useState("");
+  const [uploadedImages, setUploadedImages] = useState([]);
+  const uploadedImagesRef = useRef([]);
   const [videoOptions, setVideoOptions] = useState({ startTime: "00:00", endTime: "00:20" });
 
   const activeCaption = captionDrafts[selectedStyle] || "";
   const activeDesign = designDrafts[selectedStyle] || { headline: "", subheadline: "" };
   const activeHashtags = activeResult?.post?.hashtags || [];
   const activeKeywords = activeResult?.post?.keywords || [];
+  const activeImages = [...(activeResult?.post?.images || []), ...uploadedImages];
+
+  useEffect(() => {
+    uploadedImagesRef.current = uploadedImages;
+  }, [uploadedImages]);
+
+  useEffect(() => {
+    return () => {
+      uploadedImagesRef.current.forEach((image) => URL.revokeObjectURL(image.proxyUrl));
+    };
+  }, []);
 
   const pushMessage = (message) => {
     setMessages((current) => [...current, { id: crypto.randomUUID(), ...message }]);
@@ -157,6 +170,10 @@ export default function App() {
     setDesignDrafts(cloneDesignVariants(normalizedDesignVariants));
     setSelectedStyle("professional");
     setSelectedImageId(result.post.images?.[0]?.id || "");
+    setUploadedImages((current) => {
+      current.forEach((image) => URL.revokeObjectURL(image.proxyUrl));
+      return [];
+    });
     setVideoOptions({ startTime: defaultStartTime, endTime: defaultEndTime });
     if (remember) {
       pushPostHistory(result);
@@ -327,6 +344,29 @@ export default function App() {
     hydrateStudio(result, "Restored from history.", { remember: false });
   };
 
+  const handleImageUpload = (file) => {
+    if (!file) {
+      return;
+    }
+
+    const imageUrl = URL.createObjectURL(file);
+    const image = {
+      id: `uploaded-image-${crypto.randomUUID()}`,
+      source: "Upload",
+      alt: file.name || "Uploaded image",
+      originalUrl: imageUrl,
+      previewUrl: imageUrl,
+      proxyUrl: imageUrl,
+      creditName: "",
+      creditUrl: "",
+      textRisk: false,
+      preferredForOverlay: true
+    };
+
+    setUploadedImages((current) => [...current, image]);
+    setSelectedImageId(image.id);
+  };
+
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(255,190,120,0.16),_transparent_24%),radial-gradient(circle_at_top_right,_rgba(103,162,255,0.18),_transparent_28%),radial-gradient(circle_at_50%_120%,_rgba(27,178,148,0.12),_transparent_34%),linear-gradient(160deg,_#050816_0%,_#0b1324_34%,_#111a2f_64%,_#060a12_100%)] text-white">
       <div className="mx-auto max-w-[1600px] px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
@@ -351,11 +391,12 @@ export default function App() {
                 <PostPreview
                   article={activeResult.article}
                   design={activeDesign}
-                  images={activeResult.post.images || []}
+                  images={activeImages}
                   providerUsed={activeResult.post.providerUsed}
                   selectedImageId={selectedImageId}
                   selectedStyle={selectedStyle}
                   settings={imageSettings}
+                  onImageUpload={handleImageUpload}
                   onSelectImage={setSelectedImageId}
                 />
                 <CaptionSelector

@@ -18,9 +18,11 @@ export default function PostPreview({
   selectedImageId,
   selectedStyle,
   settings,
+  onImageUpload,
   onSelectImage
 }) {
   const canvasRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   const selectedImage = useMemo(
     () => images.find((image) => image.id === selectedImageId) || images[0] || null,
@@ -82,6 +84,16 @@ export default function PostPreview({
     link.click();
   };
 
+  const handleFileChange = (event) => {
+    const file = event.target.files?.[0];
+
+    if (file) {
+      onImageUpload(file);
+    }
+
+    event.target.value = "";
+  };
+
   const providerLabel = providerUsed ? providerUsed.replace(/^./, (char) => char.toUpperCase()) : "";
 
   return (
@@ -123,6 +135,25 @@ export default function PostPreview({
 
       <div className="mt-5">
         <p className="text-xs uppercase tracking-[0.32em] text-slate">Suggested Images</p>
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-slate-300">
+            Keep a suggested image selected, or upload one from your device.
+          </p>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleFileChange}
+            className="sr-only"
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="w-full rounded-full border border-white/15 bg-white/10 px-5 py-3 text-sm font-semibold text-paper transition hover:border-sky/50 hover:bg-white/15 sm:w-auto"
+          >
+            Upload Image
+          </button>
+        </div>
         <div className="mt-3 grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 xl:grid-cols-4">
           {images.length ? (
             images.map((image) => (
