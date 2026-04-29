@@ -129,6 +129,82 @@ async function decodeWithGoogleBatch(token, signature, timestamp) {
   return decodedUrl;
 }
 
+async function decodeWithGoogleBatchFallback(token) {
+  const requestBody = [
+    [
+      [
+        "Fbv4je",
+        JSON.stringify([
+          "garturlreq",
+          [
+            [
+              "en-US",
+              "US",
+              ["FINANCE_TOP_INDICES", "WEB_TEST_1_0_0"],
+              null,
+              null,
+              1,
+              1,
+              "US:en",
+              null,
+              180,
+              null,
+              null,
+              null,
+              null,
+              null,
+              0,
+              null,
+              null,
+              [1608992183, 723341000]
+            ],
+            "en-US",
+            "US",
+            1,
+            [2, 3, 4, 8],
+            1,
+            0,
+            "655000234",
+            0,
+            0,
+            null,
+            0
+          ],
+          token
+        ]),
+        null,
+        "generic"
+      ]
+    ]
+  ];
+
+  const response = await axios.post(
+    `https://${GOOGLE_NEWS_HOST}/_/DotsSplashUi/data/batchexecute?rpcids=Fbv4je`,
+    `f.req=${encodeURIComponent(JSON.stringify(requestBody))}`,
+    {
+      timeout: 15000,
+      proxy: false,
+      headers: {
+        ...REQUEST_HEADERS,
+        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+        Referer: `https://${GOOGLE_NEWS_HOST}/`
+      }
+    }
+  );
+
+  const text = String(response.data || "");
+  const resultMatch = text.match(/\[\\"garturlres\\",\\"((?:\\\\.|[^\\"])*)\\"/);
+  const decodedUrl = resultMatch?.[1]
+    ? JSON.parse(`"${resultMatch[1].replace(/"/g, '\\"')}"`)
+    : "";
+
+  if (!decodedUrl) {
+    throw new Error("Google News did not return a publisher URL.");
+  }
+
+  return decodedUrl;
+}
+
 async function resolveGoogleNewsUrl(sourceUrl) {
   const token = readGoogleNewsToken(sourceUrl);
 
@@ -146,8 +222,15 @@ async function resolveGoogleNewsUrl(sourceUrl) {
     return setCachedValue(token, legacyUrl);
   }
 
-  const { signature, timestamp } = await getDecodingParams(token);
-  const decodedUrl = await decodeWithGoogleBatch(token, signature, timestamp);
+  let decodedUrl = "";
+
+  try {
+    const { signature, timestamp } = await getDecodingParams(token);
+    decodedUrl = await decodeWithGoogleBatch(token, signature, timestamp);
+  } catch (error) {
+    decodedUrl = await decodeWithGoogleBatchFallback(token);
+  }
+
   return setCachedValue(token, decodedUrl);
 }
 

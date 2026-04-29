@@ -148,8 +148,8 @@ export default function App() {
     });
   };
 
-  const runLinkGeneration = async (url) => {
-    const result = await generateFromLink(url);
+  const runLinkGeneration = async (url, article = null) => {
+    const result = await generateFromLink(url, article);
     hydrateStudio(
       result,
       "Your Instagram post package is ready. You can switch caption styles, edit the copy, swap images, and export the 4:5 visual."
@@ -242,7 +242,7 @@ export default function App() {
     setLoading(true);
 
     try {
-      await runLinkGeneration(article.url);
+      await runLinkGeneration(article.url, article);
     } catch (error) {
       pushMessage({
         role: "assistant",

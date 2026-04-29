@@ -18,6 +18,24 @@ function shouldFallbackToSourceSummary(error) {
   return [401, 403, 422, 451].includes(Number(error?.status || error?.response?.status || 0));
 }
 
+function buildSeedStoryFromRequest(body, url) {
+  const title = String(body?.title || "").trim();
+  const summary = String(body?.summary || "").trim();
+
+  if (!title && !summary) {
+    return null;
+  }
+
+  return normalizeStorySeed({
+    title: title || "Selected article",
+    content: summary || title,
+    source: String(body?.source || "Selected source").trim(),
+    url,
+    image: String(body?.image || "").trim(),
+    publishedAt: String(body?.publishedAt || "").trim()
+  });
+}
+
 async function buildFallbackStoryFromUrl(url) {
   const query = deriveTopicFromUrl(url);
 
@@ -136,10 +154,11 @@ async function generateFromLink(req, res, next) {
         throw error;
       }
 
-      const fallback = await buildFallbackStoryFromUrl(url);
-      article = fallback.article;
+      const seedArticle = buildSeedStoryFromRequest(req.body, url);
+      const fallback = seedArticle ? null : await buildFallbackStoryFromUrl(url);
+      article = seedArticle || fallback.article;
       post = await generateInstagramPackageFromPrompt({
-        prompt: fallback.query,
+        prompt: seedArticle?.title || fallback.query,
         context: article.content,
         source: article.source
       });

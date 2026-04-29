@@ -25,10 +25,17 @@ export function searchNews(query) {
   });
 }
 
-export function generateFromLink(url) {
+export function generateFromLink(url, article = null) {
   return request("/api/generate-from-link", {
     method: "POST",
-    body: JSON.stringify({ url })
+    body: JSON.stringify({
+      url,
+      title: article?.title || "",
+      summary: article?.summary || "",
+      source: article?.source || "",
+      image: article?.image || "",
+      publishedAt: article?.publishedAt || ""
+    })
   });
 }
 

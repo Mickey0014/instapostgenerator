@@ -9,6 +9,7 @@ const {
   keywordCandidates,
   trimToWordBoundary
 } = require("../utils/text");
+const { resolveArticleUrl } = require("./googleNewsDecoder");
 const { extractVideoContext, formatTimestamp, transcriptToText } = require("./videoService");
 
 const DEFAULT_HEADERS = {
@@ -348,11 +349,20 @@ async function extractArticleFromUrl(url) {
   let validatedUrl;
 
   try {
-    validatedUrl = new URL(url);
+    const resolvedUrl = await resolveArticleUrl(url);
+    validatedUrl = new URL(resolvedUrl);
   } catch (error) {
     const validationError = new Error("Please enter a valid article URL.");
     validationError.status = 400;
     throw validationError;
+  }
+
+  if (validatedUrl.hostname === "news.google.com") {
+    const extractionError = new Error(
+      "I couldn't resolve that Google News wrapper to the publisher article."
+    );
+    extractionError.status = 422;
+    throw extractionError;
   }
 
   const twitterStatus = isTwitterStatusUrl(validatedUrl)
@@ -404,7 +414,7 @@ async function extractArticleFromUrl(url) {
       dedupeStrings([preferredDescription, fallbackVideoText].filter(Boolean)).join(" ")
   );
 
-  if ([401, 403, 451].includes(response.status) && !content) {
+  if ([401, 403, 451].includes(response.status)) {
     throw buildBlockedArticleError(validatedUrl, response.status);
   }
 
