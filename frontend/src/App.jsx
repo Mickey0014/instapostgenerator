@@ -86,6 +86,8 @@ function normalizeDesignVariants(designVariants, fallbackDesign) {
 
 export default function App() {
   const [messages, setMessages] = useState(INITIAL_MESSAGES);
+  const [sourceHistory, setSourceHistory] = useState([]);
+  const [postHistory, setPostHistory] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [selectedStyle, setSelectedStyle] = useState("professional");
@@ -106,7 +108,35 @@ export default function App() {
     setMessages((current) => [...current, { id: crypto.randomUUID(), ...message }]);
   };
 
-  const hydrateStudio = (result, assistantText) => {
+  const startCleanThread = (message) => {
+    setMessages([...INITIAL_MESSAGES, { id: crypto.randomUUID(), ...message }]);
+  };
+
+  const pushSourceHistory = (entry) => {
+    setSourceHistory((current) => [
+      {
+        id: crypto.randomUUID(),
+        createdAt: new Date().toISOString(),
+        ...entry
+      },
+      ...current
+    ]);
+  };
+
+  const pushPostHistory = (result) => {
+    setPostHistory((current) => [
+      {
+        id: crypto.randomUUID(),
+        createdAt: new Date().toISOString(),
+        article: result.article,
+        post: result.post,
+        result
+      },
+      ...current
+    ]);
+  };
+
+  const hydrateStudio = (result, assistantText, { remember = true } = {}) => {
     const normalizedDesignVariants = normalizeDesignVariants(
       result.post.designVariants,
       result.post.design
@@ -128,6 +158,9 @@ export default function App() {
     setSelectedStyle("professional");
     setSelectedImageId(result.post.images?.[0]?.id || "");
     setVideoOptions({ startTime: defaultStartTime, endTime: defaultEndTime });
+    if (remember) {
+      pushPostHistory(result);
+    }
     pushMessage({
       role: "assistant",
       type: "post-ready",
@@ -139,6 +172,11 @@ export default function App() {
 
   const runPromptSearch = async (query) => {
     const data = await searchNews(query);
+    pushSourceHistory({
+      query,
+      sourceCount: data.sourceCount,
+      articles: data.articles
+    });
     pushMessage({
       role: "assistant",
       type: "search-results",
@@ -173,7 +211,7 @@ export default function App() {
       return;
     }
 
-    pushMessage({
+    startCleanThread({
       role: "user",
       type: "text",
       text: trimmed
@@ -206,7 +244,7 @@ export default function App() {
       return;
     }
 
-    pushMessage({
+    startCleanThread({
       role: "user",
       type: "text",
       text: `Find sources for: ${trimmed}`
@@ -233,7 +271,7 @@ export default function App() {
       return;
     }
 
-    pushMessage({
+    startCleanThread({
       role: "user",
       type: "text",
       text: `Generate post from: ${article.title}`
@@ -259,7 +297,7 @@ export default function App() {
       return;
     }
 
-    pushMessage({
+    startCleanThread({
       role: "user",
       type: "text",
       text: `Generate directly from prompt: ${prompt}`
@@ -280,6 +318,15 @@ export default function App() {
     }
   };
 
+  const handleRestorePost = (result) => {
+    startCleanThread({
+      role: "user",
+      type: "text",
+      text: `Open previous post: ${result.article.title}`
+    });
+    hydrateStudio(result, "Restored from history.", { remember: false });
+  };
+
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(255,190,120,0.16),_transparent_24%),radial-gradient(circle_at_top_right,_rgba(103,162,255,0.18),_transparent_28%),radial-gradient(circle_at_50%_120%,_rgba(27,178,148,0.12),_transparent_34%),linear-gradient(160deg,_#050816_0%,_#0b1324_34%,_#111a2f_64%,_#060a12_100%)] text-white">
       <div className="mx-auto max-w-[1600px] px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
@@ -288,9 +335,12 @@ export default function App() {
             input={input}
             loading={loading}
             messages={messages}
+            postHistory={postHistory}
+            sourceHistory={sourceHistory}
             onArticleSelect={handleArticleSelect}
             onGeneratePrompt={handleGeneratePrompt}
             onInputChange={setInput}
+            onRestorePost={handleRestorePost}
             onSearchSources={handleSearchSources}
             onSubmit={handleSubmit}
           />
