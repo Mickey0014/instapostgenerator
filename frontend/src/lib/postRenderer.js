@@ -7,11 +7,11 @@ export const INSTAGRAM_EXPORT_ASPECT_CLASS = "aspect-[4/5]";
 export function buildDisplayCopy(article, design) {
   const headline = trimDisplayText(
     design.headline || article.title || "Top story",
-    72
+    96
   );
   const subheadline = trimDisplayText(
     design.subheadline || article.excerpt || "Swipe-ready summary generated automatically.",
-    96
+    160
   );
 
   return {
@@ -383,6 +383,659 @@ function drawSourceBadge(context, article, settings, x, y, width = null) {
 
   context.fillStyle = settings.color;
   context.fillText(article.source || "News Source", x + 20, y + 35);
+}
+
+function drawPosterMedia(context, media, mediaMeta, width, height, options = {}) {
+  const {
+    x = 0,
+    y = 0,
+    frameWidth = width,
+    frameHeight = height,
+    focusY = 0.32,
+    focusX = 0.5,
+    zoom = 1,
+    filter = "brightness(0.82) contrast(1.06) saturate(1.04)"
+  } = options;
+
+  if (!media) {
+    const fallback = context.createLinearGradient(0, y, frameWidth, y + frameHeight);
+    fallback.addColorStop(0, "#243145");
+    fallback.addColorStop(0.5, "#121821");
+    fallback.addColorStop(1, "#030406");
+    context.fillStyle = fallback;
+    context.fillRect(x, y, frameWidth, frameHeight);
+    return;
+  }
+
+  context.save();
+  context.filter = filter;
+  drawMediaCover(context, media, x, y, frameWidth, frameHeight, focusY, focusX, zoom);
+  context.restore();
+  softenTextArtifacts(context, media, { x, y, width: frameWidth, height: frameHeight }, {}, mediaMeta);
+}
+
+function drawBottomShade(context, width, height, start = 0.42, strength = 0.96) {
+  const shade = context.createLinearGradient(0, height * start, 0, height);
+  shade.addColorStop(0, "rgba(0,0,0,0)");
+  shade.addColorStop(0.55, `rgba(0,0,0,${strength * 0.58})`);
+  shade.addColorStop(1, `rgba(0,0,0,${strength})`);
+  context.fillStyle = shade;
+  context.fillRect(0, height * start, width, height * (1 - start));
+}
+
+function drawTopShade(context, width, height, end = 0.22) {
+  const shade = context.createLinearGradient(0, 0, 0, height * end);
+  shade.addColorStop(0, "rgba(0,0,0,0.48)");
+  shade.addColorStop(1, "rgba(0,0,0,0)");
+  context.fillStyle = shade;
+  context.fillRect(0, 0, width, height * end);
+}
+
+function drawFittedText(context, text, options) {
+  const {
+    x,
+    y,
+    maxWidth,
+    maxLines,
+    maxFontSize,
+    minFontSize,
+    fontFamily,
+    fontWeight = 900,
+    lineHeightRatio = 0.96,
+    color = "#ffffff",
+    align = "left",
+    baseline = "top",
+    uppercase = false
+  } = options;
+  const copy = uppercase ? String(text || "").toUpperCase() : String(text || "");
+  const layout = fitTextBlock(context, copy, {
+    fontFamily,
+    fontWeight,
+    maxFontSize,
+    minFontSize,
+    maxWidth,
+    maxLines,
+    lineHeightRatio
+  });
+
+  context.save();
+  context.fillStyle = color;
+  context.textAlign = align;
+  context.textBaseline = baseline;
+  context.font = `${fontWeight} ${layout.fontSize}px "${fontFamily}"`;
+  drawTextLines(context, layout.lines, x, y, layout.lineHeight);
+  context.restore();
+
+  return layout;
+}
+
+function drawCircleImage(context, media, x, y, radius, options = {}) {
+  context.save();
+  context.beginPath();
+  context.arc(x, y, radius, 0, Math.PI * 2);
+  context.clip();
+  drawPosterMedia(context, media, options.mediaMeta, radius * 2, radius * 2, {
+    x: x - radius,
+    y: y - radius,
+    frameWidth: radius * 2,
+    frameHeight: radius * 2,
+    focusY: options.focusY ?? 0.28,
+    focusX: options.focusX ?? 0.5,
+    zoom: options.zoom ?? 1.12,
+    filter: options.filter || "brightness(0.96) contrast(1.05) saturate(1.06)"
+  });
+  context.restore();
+
+  context.save();
+  context.beginPath();
+  context.arc(x, y, radius, 0, Math.PI * 2);
+  context.strokeStyle = options.stroke || "#ffffff";
+  context.lineWidth = options.lineWidth || 8;
+  context.stroke();
+  context.restore();
+}
+
+function formatPostDate(article) {
+  const date = article?.publishedAt ? new Date(article.publishedAt) : new Date();
+
+  if (Number.isNaN(date.getTime())) {
+    return "TODAY";
+  }
+
+  return date
+    .toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric"
+    })
+    .toUpperCase();
+}
+
+function drawRedAlertTemplate(context, article, design, settings, media, mediaMeta, width, height) {
+  const { headline, subheadline } = buildDisplayCopy(article, design);
+  const font = settings.fontFamily;
+
+  drawPosterMedia(context, media, mediaMeta, width, height, { focusY: 0.26, filter: "brightness(0.74) contrast(1.08) saturate(1.02)" });
+  drawTopShade(context, width, height);
+  drawBottomShade(context, width, height, 0.44, 0.98);
+
+  const headlineY = height * 0.68;
+  const headlineHeight = 94;
+  context.fillStyle = "#f01912";
+  withRoundedRect(context, 24, headlineY - 18, width - 48, headlineHeight, 8);
+  context.fill();
+
+  drawFittedText(context, headline, {
+    x: width / 2,
+    y: headlineY,
+    maxWidth: width - 86,
+    maxLines: 1,
+    maxFontSize: Math.min(settings.fontSize + 10, 104),
+    minFontSize: 48,
+    fontFamily: font,
+    color: "#ffffff",
+    align: "center",
+    uppercase: true
+  });
+
+  drawFittedText(context, subheadline, {
+    x: width / 2,
+    y: headlineY + 132,
+    maxWidth: width - 150,
+    maxLines: 4,
+    maxFontSize: 46,
+    minFontSize: 28,
+    fontFamily: font,
+    fontWeight: 800,
+    lineHeightRatio: 1.16,
+    color: "#ffffff",
+    align: "center"
+  });
+
+  context.fillStyle = "#ffffff";
+  context.fillRect(0, height - 60, width, 60);
+  drawFittedText(context, subheadline || headline, {
+    x: width / 2,
+    y: height - 52,
+    maxWidth: width - 140,
+    maxLines: 1,
+    maxFontSize: 40,
+    minFontSize: 24,
+    fontFamily: font,
+    fontWeight: 900,
+    color: "#f01912",
+    align: "center"
+  });
+}
+
+function drawSplitCaptionTemplate(context, article, design, settings, media, mediaMeta, width, height, mediaSlots = {}) {
+  const { headline, subheadline } = buildDisplayCopy(article, design);
+  const font = settings.fontFamily;
+  const circleMedia = mediaSlots.circle || media;
+  const circleMeta = mediaSlots.circleMeta || mediaMeta;
+  const secondMedia = mediaSlots.second || media;
+  const secondMeta = mediaSlots.secondMeta || mediaMeta;
+
+  context.fillStyle = "#ffffff";
+  context.fillRect(0, 0, width, height);
+  drawFittedText(context, headline, {
+    x: width / 2,
+    y: 28,
+    maxWidth: width - 160,
+    maxLines: 3,
+    maxFontSize: 52,
+    minFontSize: 30,
+    fontFamily: font,
+    fontWeight: 900,
+    lineHeightRatio: 1.08,
+    color: "#050505",
+    align: "center"
+  });
+
+  const imageY = 202;
+  const imageHeight = 946;
+  drawPosterMedia(context, media, mediaMeta, width / 2, imageHeight, { x: 0, y: imageY, frameWidth: width / 2, frameHeight: imageHeight, focusX: 0.26, focusY: 0.28 });
+  drawPosterMedia(context, secondMedia, secondMeta, width / 2, imageHeight, { x: width / 2, y: imageY, frameWidth: width / 2, frameHeight: imageHeight, focusX: 0.74, focusY: 0.28, filter: "grayscale(0.62) brightness(0.7) contrast(1.04)" });
+  context.fillStyle = "rgba(0,0,0,0.18)";
+  context.fillRect(width / 2, imageY, width / 2, imageHeight);
+  drawCircleImage(context, circleMedia, width / 2, imageY + imageHeight * 0.58, 178, { mediaMeta: circleMeta, stroke: "#ffffff", lineWidth: 6 });
+
+  context.fillStyle = "#a92907";
+  context.fillRect(0, height - 202, width, 202);
+  drawFittedText(context, subheadline, {
+    x: width / 2,
+    y: height - 164,
+    maxWidth: width - 120,
+    maxLines: 2,
+    maxFontSize: 54,
+    minFontSize: 34,
+    fontFamily: font,
+    fontWeight: 900,
+    lineHeightRatio: 1.18,
+    color: "#ffffff",
+    align: "center"
+  });
+}
+
+function drawBlueBlackTemplate(context, article, design, settings, media, mediaMeta, width, height, mediaSlots = {}) {
+  const { headline, subheadline } = buildDisplayCopy(article, design);
+  const font = settings.fontFamily;
+  const secondMedia = mediaSlots.second || null;
+  const secondMeta = mediaSlots.secondMeta || null;
+
+  context.fillStyle = "#075272";
+  context.fillRect(0, 0, width, 232);
+  drawFittedText(context, headline, {
+    x: width / 2,
+    y: 50,
+    maxWidth: width - 120,
+    maxLines: 2,
+    maxFontSize: 50,
+    minFontSize: 30,
+    fontFamily: font,
+    fontWeight: 900,
+    lineHeightRatio: 1.18,
+    color: "#ffffff",
+    align: "center"
+  });
+
+  if (secondMedia) {
+    drawPosterMedia(context, media, mediaMeta, width / 2, 780, { x: 0, y: 232, frameWidth: width / 2, frameHeight: 780, focusX: 0.42, focusY: 0.26 });
+    drawPosterMedia(context, secondMedia, secondMeta, width / 2, 780, { x: width / 2, y: 232, frameWidth: width / 2, frameHeight: 780, focusX: 0.58, focusY: 0.26 });
+  } else {
+    drawPosterMedia(context, media, mediaMeta, width, 780, { x: 0, y: 232, frameWidth: width, frameHeight: 780, focusY: 0.26 });
+  }
+  context.fillStyle = "#000000";
+  context.fillRect(0, 1012, width, height - 1012);
+
+  drawFittedText(context, subheadline, {
+    x: 98,
+    y: 1094,
+    maxWidth: width - 196,
+    maxLines: 4,
+    maxFontSize: 58,
+    minFontSize: 34,
+    fontFamily: font,
+    fontWeight: 700,
+    lineHeightRatio: 1.2,
+    color: "#ffffff"
+  });
+}
+
+function drawBrownBarTemplate(context, article, design, settings, media, mediaMeta, width, height) {
+  const { headline, subheadline } = buildDisplayCopy(article, design);
+  const font = settings.fontFamily;
+
+  drawPosterMedia(context, media, mediaMeta, width, height, { focusY: 0.24, filter: "brightness(0.72) contrast(1.08) saturate(0.96)" });
+  drawBottomShade(context, width, height, 0.42, 0.98);
+  context.fillStyle = "#fff21a";
+  [0, 56, 112, 168, 224].forEach((offset) => context.fillRect(30, height - 318 + offset, 16, 38));
+
+  context.fillStyle = "#8d4a2f";
+  context.fillRect(72, height - 320, width - 116, 72);
+  drawFittedText(context, headline, {
+    x: 92,
+    y: height - 312,
+    maxWidth: width - 160,
+    maxLines: 1,
+    maxFontSize: 64,
+    minFontSize: 34,
+    fontFamily: font,
+    fontWeight: 900,
+    color: "#ffffff",
+    uppercase: false
+  });
+
+  drawFittedText(context, subheadline, {
+    x: 74,
+    y: height - 226,
+    maxWidth: width - 112,
+    maxLines: 4,
+    maxFontSize: 40,
+    minFontSize: 26,
+    fontFamily: font,
+    fontWeight: 800,
+    lineHeightRatio: 1.2,
+    color: "#ffffff"
+  });
+}
+
+function drawCircleMontageTemplate(context, article, design, settings, media, mediaMeta, width, height, mediaSlots = {}) {
+  const { headline, subheadline } = buildDisplayCopy(article, design);
+  const font = settings.fontFamily;
+  const circleMedia = mediaSlots.circle || media;
+  const circleMeta = mediaSlots.circleMeta || mediaMeta;
+  const secondMedia = mediaSlots.second || media;
+  const secondMeta = mediaSlots.secondMeta || mediaMeta;
+
+  drawPosterMedia(context, media, mediaMeta, width / 2, 660, { x: 0, y: 0, frameWidth: width / 2, frameHeight: 660, focusX: 0.32, focusY: 0.22 });
+  drawPosterMedia(context, secondMedia, secondMeta, width / 2, 660, { x: width / 2, y: 0, frameWidth: width / 2, frameHeight: 660, focusX: 0.68, focusY: 0.22 });
+  drawPosterMedia(context, media, mediaMeta, width, height - 620, { x: 0, y: 620, frameWidth: width, frameHeight: height - 620, focusY: 0.52, filter: "brightness(0.88) contrast(1.02) saturate(1.02)" });
+  drawBottomShade(context, width, height, 0.28, 0.78);
+
+  drawCircleImage(context, circleMedia, width - 180, 610, 124, { mediaMeta: circleMeta, stroke: "#ffffff", lineWidth: 7, focusX: 0.72 });
+  drawFittedText(context, headline, {
+    x: 42,
+    y: 548,
+    maxWidth: width - 300,
+    maxLines: 4,
+    maxFontSize: 47,
+    minFontSize: 28,
+    fontFamily: font,
+    fontWeight: 900,
+    lineHeightRatio: 1.12,
+    color: "#ffffff"
+  });
+
+  drawFittedText(context, subheadline, {
+    x: width / 2,
+    y: height - 128,
+    maxWidth: width - 120,
+    maxLines: 2,
+    maxFontSize: 34,
+    minFontSize: 22,
+    fontFamily: UI_FONT_FAMILY,
+    fontWeight: 800,
+    lineHeightRatio: 1.22,
+    color: "#ffffff",
+    align: "center",
+    uppercase: true
+  });
+}
+
+function drawHistoryDateTemplate(context, article, design, settings, media, mediaMeta, width, height, mediaSlots = {}) {
+  const { headline, subheadline } = buildDisplayCopy(article, design);
+  const font = settings.fontFamily;
+  const circleMedia = mediaSlots.circle || media;
+  const circleMeta = mediaSlots.circleMeta || mediaMeta;
+
+  drawPosterMedia(context, media, mediaMeta, width, height, { focusY: 0.22, filter: "grayscale(1) brightness(0.76) contrast(1.12)" });
+  drawBottomShade(context, width, height, 0.38, 1);
+  drawCircleImage(context, circleMedia, width - 250, 635, 142, { mediaMeta: circleMeta, stroke: "#ffffff", lineWidth: 8, filter: "brightness(1.04) contrast(1.03)" });
+
+  context.fillStyle = "#ffffff";
+  context.font = `900 70px "${font}"`;
+  context.fillText("▦", 140, 1000);
+  const dateGradient = context.createLinearGradient(260, 0, 920, 0);
+  dateGradient.addColorStop(0, "#ff7b32");
+  dateGradient.addColorStop(0.5, "#fff4e5");
+  dateGradient.addColorStop(1, "#11ef72");
+  context.fillStyle = dateGradient;
+  context.font = `900 72px "${font}"`;
+  context.fillText(formatPostDate(article), 268, 1000);
+
+  drawFittedText(context, headline || subheadline, {
+    x: 132,
+    y: 1078,
+    maxWidth: width - 260,
+    maxLines: 2,
+    maxFontSize: 44,
+    minFontSize: 28,
+    fontFamily: font,
+    fontWeight: 900,
+    lineHeightRatio: 1.25,
+    color: "#ffffff"
+  });
+  context.fillStyle = dateGradient;
+  context.fillRect(108, height - 70, width - 216, 12);
+}
+
+function drawRegionalBoldTemplate(context, article, design, settings, media, mediaMeta, width, height) {
+  const { headline, subheadline } = buildDisplayCopy(article, design);
+  const font = settings.fontFamily;
+
+  drawPosterMedia(context, media, mediaMeta, width, height, { focusY: 0.24, filter: "brightness(0.78) contrast(1.08) saturate(1.08)" });
+  drawBottomShade(context, width, height, 0.42, 0.95);
+  context.fillStyle = "rgba(255, 202, 22, 0.9)";
+  context.fillRect(width / 2 - 8, 0, 16, height * 0.62);
+  context.shadowColor = "rgba(255, 222, 30, 0.9)";
+  context.shadowBlur = 18;
+  context.fillRect(width / 2 - 4, 0, 8, height * 0.62);
+  context.shadowBlur = 0;
+
+  drawFittedText(context, headline, {
+    x: 48,
+    y: height - 356,
+    maxWidth: width - 96,
+    maxLines: 3,
+    maxFontSize: 58,
+    minFontSize: 34,
+    fontFamily: font,
+    fontWeight: 900,
+    lineHeightRatio: 1.16,
+    color: "#ff7b13"
+  });
+  drawFittedText(context, subheadline, {
+    x: 48,
+    y: height - 158,
+    maxWidth: width - 96,
+    maxLines: 2,
+    maxFontSize: 48,
+    minFontSize: 30,
+    fontFamily: font,
+    fontWeight: 900,
+    lineHeightRatio: 1.18,
+    color: "#ffffff"
+  });
+  context.fillStyle = "#ff7b13";
+  context.fillRect(0, height - 8, width, 8);
+}
+
+function drawYellowQuestionTemplate(context, article, design, settings, media, mediaMeta, width, height, mediaSlots = {}) {
+  const { headline, subheadline } = buildDisplayCopy(article, design);
+  const font = settings.fontFamily;
+  const circleMedia = mediaSlots.circle || media;
+  const circleMeta = mediaSlots.circleMeta || mediaMeta;
+
+  drawPosterMedia(context, media, mediaMeta, width, height, { focusY: 0.3, filter: "brightness(0.64) contrast(1.14) saturate(1.1)" });
+  drawBottomShade(context, width, height, 0.38, 0.98);
+  drawCircleImage(context, circleMedia, 268, 606, 150, { mediaMeta: circleMeta, stroke: "#ffffff", lineWidth: 7, filter: "grayscale(1) brightness(1.02)" });
+  drawFittedText(context, headline, {
+    x: width / 2,
+    y: 920,
+    maxWidth: width - 120,
+    maxLines: 2,
+    maxFontSize: 62,
+    minFontSize: 36,
+    fontFamily: font,
+    fontWeight: 900,
+    lineHeightRatio: 1.15,
+    color: "#ffff00",
+    align: "center",
+    uppercase: true
+  });
+  drawFittedText(context, subheadline, {
+    x: width / 2,
+    y: 1086,
+    maxWidth: width - 170,
+    maxLines: 4,
+    maxFontSize: 35,
+    minFontSize: 24,
+    fontFamily: font,
+    fontWeight: 800,
+    lineHeightRatio: 1.25,
+    color: "#ffffff",
+    align: "center"
+  });
+  context.fillStyle = "#ffff00";
+  context.fillRect(0, height - 48, width, 48);
+  drawFittedText(context, subheadline || headline, {
+    x: width / 2,
+    y: height - 40,
+    maxWidth: width - 160,
+    maxLines: 1,
+    maxFontSize: 31,
+    minFontSize: 18,
+    fontFamily: font,
+    fontWeight: 900,
+    color: "#000000",
+    align: "center"
+  });
+}
+
+function drawLegacyPosterTemplate(context, article, design, settings, media, mediaMeta, width, height, mediaSlots = {}) {
+  const { headline, subheadline } = buildDisplayCopy(article, design);
+  const font = settings.fontFamily;
+  const circleMedia = mediaSlots.circle || media;
+  const circleMeta = mediaSlots.circleMeta || mediaMeta;
+
+  drawPosterMedia(context, media, mediaMeta, width, height, { focusY: 0.18, filter: "brightness(0.72) contrast(1.04) saturate(0.92)" });
+  drawBottomShade(context, width, height, 0.34, 1);
+  drawCircleImage(context, circleMedia, 296, 694, 124, { mediaMeta: circleMeta, stroke: "#ffffff", lineWidth: 6, focusX: 0.32 });
+  drawCircleImage(context, circleMedia, width - 298, 694, 124, { mediaMeta: circleMeta, stroke: "#ffffff", lineWidth: 6, focusX: 0.72 });
+  drawFittedText(context, headline, {
+    x: width / 2,
+    y: 930,
+    maxWidth: width - 170,
+    maxLines: 2,
+    maxFontSize: 62,
+    minFontSize: 36,
+    fontFamily: font,
+    fontWeight: 900,
+    lineHeightRatio: 1.12,
+    color: "#b7d4aa",
+    align: "center",
+    uppercase: true
+  });
+  drawFittedText(context, subheadline, {
+    x: width / 2,
+    y: 1112,
+    maxWidth: width - 170,
+    maxLines: 3,
+    maxFontSize: 34,
+    minFontSize: 22,
+    fontFamily: UI_FONT_FAMILY,
+    fontWeight: 500,
+    lineHeightRatio: 1.35,
+    color: "#ffffff",
+    align: "center",
+    uppercase: true
+  });
+  context.strokeStyle = "#ffffff";
+  context.lineWidth = 3;
+  context.beginPath();
+  context.moveTo(76, height - 78);
+  context.lineTo(width - 76, height - 78);
+  context.stroke();
+}
+
+function drawTargetedCardTemplate(context, article, design, settings, media, mediaMeta, width, height) {
+  const { headline, subheadline } = buildDisplayCopy(article, design);
+  const font = settings.fontFamily;
+
+  drawPosterMedia(context, media, mediaMeta, width, height, { focusY: 0.2, filter: "brightness(0.58) contrast(1.12) saturate(0.92)" });
+  drawBottomShade(context, width, height, 0.36, 0.98);
+
+  context.save();
+  withRoundedRect(context, width * 0.47, 452, width * 0.46, 350, 18);
+  context.fillStyle = "#ffffff";
+  context.fill();
+  context.lineWidth = 8;
+  context.strokeStyle = "#fff200";
+  context.stroke();
+  context.restore();
+  drawFittedText(context, subheadline, {
+    x: width * 0.5,
+    y: 498,
+    maxWidth: width * 0.38,
+    maxLines: 6,
+    maxFontSize: 26,
+    minFontSize: 17,
+    fontFamily: UI_FONT_FAMILY,
+    fontWeight: 500,
+    lineHeightRatio: 1.24,
+    color: "#111111"
+  });
+
+  context.fillStyle = "#f2352c";
+  context.fillRect(72, 886, width - 144, 96);
+  drawFittedText(context, headline, {
+    x: width / 2,
+    y: 902,
+    maxWidth: width - 180,
+    maxLines: 1,
+    maxFontSize: 72,
+    minFontSize: 38,
+    fontFamily: font,
+    fontWeight: 900,
+    color: "#ffffff",
+    align: "center",
+    uppercase: true
+  });
+  drawFittedText(context, subheadline, {
+    x: width / 2,
+    y: 1030,
+    maxWidth: width - 150,
+    maxLines: 4,
+    maxFontSize: 38,
+    minFontSize: 24,
+    fontFamily: font,
+    fontWeight: 800,
+    lineHeightRatio: 1.25,
+    color: "#ffffff",
+    align: "center"
+  });
+  context.fillStyle = "#ffffff";
+  context.fillRect(0, height - 36, width, 4);
+}
+
+function drawCyanPatternTemplate(context, article, design, settings, media, mediaMeta, width, height, mediaSlots = {}) {
+  const { headline, subheadline } = buildDisplayCopy(article, design);
+  const font = settings.fontFamily;
+  const secondMedia = mediaSlots.second || media;
+  const secondMeta = mediaSlots.secondMeta || mediaMeta;
+
+  drawPosterMedia(context, media, mediaMeta, width / 2, height, { x: 0, y: 0, frameWidth: width / 2, frameHeight: height, focusX: 0.32, focusY: 0.22, filter: "brightness(0.7) contrast(1.12) saturate(0.9)" });
+  drawPosterMedia(context, secondMedia, secondMeta, width / 2, height, { x: width / 2, y: 0, frameWidth: width / 2, frameHeight: height, focusX: 0.68, focusY: 0.22, filter: "brightness(0.82) contrast(1.16) saturate(1.18)" });
+  drawBottomShade(context, width, height, 0.4, 0.96);
+
+  drawFittedText(context, headline, {
+    x: width / 2,
+    y: 878,
+    maxWidth: width - 130,
+    maxLines: 2,
+    maxFontSize: 58,
+    minFontSize: 34,
+    fontFamily: font,
+    fontWeight: 900,
+    lineHeightRatio: 1.13,
+    color: "#26eef1",
+    align: "center",
+    uppercase: true
+  });
+  context.strokeStyle = "#ffffff";
+  context.lineWidth = 3;
+  context.beginPath();
+  context.moveTo(194, 1058);
+  context.lineTo(width - 194, 1058);
+  context.stroke();
+  drawFittedText(context, subheadline, {
+    x: width / 2,
+    y: 1100,
+    maxWidth: width - 160,
+    maxLines: 3,
+    maxFontSize: 36,
+    minFontSize: 23,
+    fontFamily: UI_FONT_FAMILY,
+    fontWeight: 500,
+    lineHeightRatio: 1.28,
+    color: "#ffffff",
+    align: "center"
+  });
+  context.fillStyle = "#18dfe8";
+  context.fillRect(0, height - 58, width, 58);
+  drawFittedText(context, subheadline || headline, {
+    x: width / 2,
+    y: height - 48,
+    maxWidth: width - 120,
+    maxLines: 1,
+    maxFontSize: 32,
+    minFontSize: 18,
+    fontFamily: font,
+    fontWeight: 900,
+    color: "#000000",
+    align: "center"
+  });
 }
 
 function drawEditorialTemplate(context, article, design, settings, media, mediaMeta, width, height) {
@@ -1017,12 +1670,68 @@ export function drawVideoOverlayTemplate(context, options) {
 }
 
 export function drawInstagramTemplate(context, options) {
-  const { article, design, settings, media, mediaMeta, width, height } = options;
+  const { article, design, settings, media, mediaMeta, mediaSlots = {}, width, height } = options;
 
   context.clearRect(0, 0, width, height);
-  drawBackdrop(context, media, mediaMeta, width, height);
 
-  const template = settings.template || "editorial";
+  const template = settings.template || "red-alert";
+
+  if (template === "red-alert") {
+    drawRedAlertTemplate(context, article, design, settings, media, mediaMeta, width, height);
+    return;
+  }
+
+  if (template === "split-caption") {
+    drawSplitCaptionTemplate(context, article, design, settings, media, mediaMeta, width, height, mediaSlots);
+    return;
+  }
+
+  if (template === "blue-black") {
+    drawBlueBlackTemplate(context, article, design, settings, media, mediaMeta, width, height, mediaSlots);
+    return;
+  }
+
+  if (template === "brown-bar") {
+    drawBrownBarTemplate(context, article, design, settings, media, mediaMeta, width, height);
+    return;
+  }
+
+  if (template === "circle-montage") {
+    drawCircleMontageTemplate(context, article, design, settings, media, mediaMeta, width, height, mediaSlots);
+    return;
+  }
+
+  if (template === "history-date") {
+    drawHistoryDateTemplate(context, article, design, settings, media, mediaMeta, width, height, mediaSlots);
+    return;
+  }
+
+  if (template === "regional-bold") {
+    drawRegionalBoldTemplate(context, article, design, settings, media, mediaMeta, width, height);
+    return;
+  }
+
+  if (template === "yellow-question") {
+    drawYellowQuestionTemplate(context, article, design, settings, media, mediaMeta, width, height, mediaSlots);
+    return;
+  }
+
+  if (template === "legacy-poster") {
+    drawLegacyPosterTemplate(context, article, design, settings, media, mediaMeta, width, height, mediaSlots);
+    return;
+  }
+
+  if (template === "targeted-card") {
+    drawTargetedCardTemplate(context, article, design, settings, media, mediaMeta, width, height);
+    return;
+  }
+
+  if (template === "cyan-pattern") {
+    drawCyanPatternTemplate(context, article, design, settings, media, mediaMeta, width, height, mediaSlots);
+    return;
+  }
+
+  drawBackdrop(context, media, mediaMeta, width, height);
 
   if (template === "spotlight") {
     drawSpotlightTemplate(context, article, design, settings, media, mediaMeta, width, height);

@@ -19,12 +19,12 @@ const INITIAL_MESSAGES = [
 ];
 
 const DEFAULT_SETTINGS = {
-  fontFamily: "Newsreader",
-  fontSize: 82,
-  color: "#fff8ee",
+  fontFamily: "Barlow",
+  fontSize: 88,
+  color: "#ffffff",
   padding: 72,
   overlayOpacity: 0.48,
-  template: "editorial"
+  template: "red-alert"
 };
 
 function isLikelyUrl(value) {
@@ -97,6 +97,7 @@ export default function App() {
   const [designDrafts, setDesignDrafts] = useState(createEmptyDesignVariants);
   const [imageSettings, setImageSettings] = useState(DEFAULT_SETTINGS);
   const [selectedImageId, setSelectedImageId] = useState("");
+  const [templateImageIds, setTemplateImageIds] = useState({});
   const [uploadedImages, setUploadedImages] = useState([]);
   const uploadedImagesRef = useRef([]);
   const [videoOptions, setVideoOptions] = useState({ startTime: "00:00", endTime: "00:20" });
@@ -170,6 +171,7 @@ export default function App() {
     setDesignDrafts(cloneDesignVariants(normalizedDesignVariants));
     setSelectedStyle("professional");
     setSelectedImageId(result.post.images?.[0]?.id || "");
+    setTemplateImageIds({});
     setUploadedImages((current) => {
       current.forEach((image) => URL.revokeObjectURL(image.proxyUrl));
       return [];
@@ -344,7 +346,7 @@ export default function App() {
     hydrateStudio(result, "Restored from history.", { remember: false });
   };
 
-  const handleImageUpload = (file) => {
+  const handleImageUpload = (file, slot = "primary") => {
     if (!file) {
       return;
     }
@@ -364,7 +366,11 @@ export default function App() {
     };
 
     setUploadedImages((current) => [...current, image]);
-    setSelectedImageId(image.id);
+    if (slot === "circle" || slot === "second") {
+      setTemplateImageIds((current) => ({ ...current, [slot]: image.id }));
+    } else {
+      setSelectedImageId(image.id);
+    }
   };
 
   return (
@@ -396,6 +402,7 @@ export default function App() {
                   selectedImageId={selectedImageId}
                   selectedStyle={selectedStyle}
                   settings={imageSettings}
+                  templateImageIds={templateImageIds}
                   onImageUpload={handleImageUpload}
                   onSelectImage={setSelectedImageId}
                 />

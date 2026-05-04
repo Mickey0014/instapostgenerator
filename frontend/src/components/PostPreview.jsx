@@ -8,7 +8,7 @@ import {
   INSTAGRAM_EXPORT_WIDTH,
   loadImage
 } from "../lib/postRenderer";
-import { getStyleLabel, getTemplateLabel } from "../lib/postOptions";
+import { getStyleLabel, getTemplateImageSlots, getTemplateLabel } from "../lib/postOptions";
 
 export default function PostPreview({
   article,
@@ -18,15 +18,27 @@ export default function PostPreview({
   selectedImageId,
   selectedStyle,
   settings,
+  templateImageIds = {},
   onImageUpload,
   onSelectImage
 }) {
   const canvasRef = useRef(null);
   const fileInputRef = useRef(null);
+  const circleInputRef = useRef(null);
+  const secondInputRef = useRef(null);
 
   const selectedImage = useMemo(
     () => images.find((image) => image.id === selectedImageId) || images[0] || null,
     [images, selectedImageId]
+  );
+  const templateSlots = getTemplateImageSlots(settings.template);
+  const circleImage = useMemo(
+    () => images.find((image) => image.id === templateImageIds.circle) || null,
+    [images, templateImageIds.circle]
+  );
+  const secondImage = useMemo(
+    () => images.find((image) => image.id === templateImageIds.second) || null,
+    [images, templateImageIds.second]
   );
 
   useEffect(() => {
@@ -37,7 +49,11 @@ export default function PostPreview({
     async function renderCanvas() {
       try {
         await ensureCanvasFontsLoaded(settings.fontFamily);
-        const image = await loadImage(selectedImage?.proxyUrl);
+        const [image, circleSlotImage, secondSlotImage] = await Promise.all([
+          loadImage(selectedImage?.proxyUrl),
+          loadImage(circleImage?.proxyUrl),
+          loadImage(secondImage?.proxyUrl)
+        ]);
 
         if (cancelled) {
           return;
@@ -49,6 +65,12 @@ export default function PostPreview({
           settings,
           media: image,
           mediaMeta: selectedImage,
+          mediaSlots: {
+            circle: circleSlotImage,
+            circleMeta: circleImage,
+            second: secondSlotImage,
+            secondMeta: secondImage
+          },
           width: canvas.width,
           height: canvas.height
         });
@@ -63,6 +85,7 @@ export default function PostPreview({
           settings,
           media: null,
           mediaMeta: selectedImage,
+          mediaSlots: {},
           width: canvas.width,
           height: canvas.height
         });
@@ -74,7 +97,7 @@ export default function PostPreview({
     return () => {
       cancelled = true;
     };
-  }, [article, design, selectedImage, settings]);
+  }, [article, circleImage, design, secondImage, selectedImage, settings]);
 
   const handleDownload = () => {
     const canvas = canvasRef.current;
@@ -84,11 +107,11 @@ export default function PostPreview({
     link.click();
   };
 
-  const handleFileChange = (event) => {
+  const handleFileChange = (event, slot = "primary") => {
     const file = event.target.files?.[0];
 
     if (file) {
-      onImageUpload(file);
+      onImageUpload(file, slot);
     }
 
     event.target.value = "";
@@ -143,7 +166,7 @@ export default function PostPreview({
             ref={fileInputRef}
             type="file"
             accept="image/*"
-            onChange={handleFileChange}
+            onChange={(event) => handleFileChange(event)}
             className="sr-only"
           />
           <button
@@ -154,6 +177,62 @@ export default function PostPreview({
             Upload Image
           </button>
         </div>
+        {templateSlots.circle || templateSlots.second ? (
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            {templateSlots.circle ? (
+              <div className="rounded-[20px] border border-white/10 bg-white/5 p-3">
+                <p className="text-xs uppercase tracking-[0.22em] text-slate">{templateSlots.circle}</p>
+                <div className="mt-3 flex items-center gap-3">
+                  {circleImage ? (
+                    <img src={circleImage.proxyUrl} alt={circleImage.alt} className="h-14 w-14 rounded-full object-cover" />
+                  ) : (
+                    <div className="h-14 w-14 rounded-full border border-dashed border-white/20 bg-ink/60" />
+                  )}
+                  <input
+                    ref={circleInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={(event) => handleFileChange(event, "circle")}
+                    className="sr-only"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => circleInputRef.current?.click()}
+                    className="min-h-[44px] flex-1 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold text-paper transition hover:border-sky/50 hover:bg-white/15"
+                  >
+                    Upload Circle
+                  </button>
+                </div>
+              </div>
+            ) : null}
+            {templateSlots.second ? (
+              <div className="rounded-[20px] border border-white/10 bg-white/5 p-3">
+                <p className="text-xs uppercase tracking-[0.22em] text-slate">{templateSlots.second}</p>
+                <div className="mt-3 flex items-center gap-3">
+                  {secondImage ? (
+                    <img src={secondImage.proxyUrl} alt={secondImage.alt} className="h-14 w-14 rounded-[14px] object-cover" />
+                  ) : (
+                    <div className="h-14 w-14 rounded-[14px] border border-dashed border-white/20 bg-ink/60" />
+                  )}
+                  <input
+                    ref={secondInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={(event) => handleFileChange(event, "second")}
+                    className="sr-only"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => secondInputRef.current?.click()}
+                    className="min-h-[44px] flex-1 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold text-paper transition hover:border-sky/50 hover:bg-white/15"
+                  >
+                    Upload Second
+                  </button>
+                </div>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
         <div className="mt-3 grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 xl:grid-cols-4">
           {images.length ? (
             images.map((image) => (

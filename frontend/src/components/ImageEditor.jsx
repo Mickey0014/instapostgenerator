@@ -54,61 +54,120 @@ function RangeField({ label, min, max, step = 1, value, onChange }) {
 }
 
 function TemplatePreview({ template }) {
-  if (template === "spotlight") {
+  if (template === "split-caption") {
     return (
-      <div className="relative h-28 overflow-hidden rounded-[18px] border border-white/10 bg-[linear-gradient(160deg,_#11233e_0%,_#09131f_100%)]">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(141,213,255,0.25),_transparent_42%)]" />
-        <div className="absolute inset-x-3 bottom-3 rounded-[16px] border border-white/15 bg-black/45 p-3">
-          <div className="h-2.5 w-16 rounded-full bg-sky/80" />
-          <div className="mt-3 h-3 w-4/5 rounded-full bg-white/80" />
-          <div className="mt-2 h-2.5 w-3/5 rounded-full bg-white/45" />
-        </div>
+      <div className="relative h-28 overflow-hidden rounded-[18px] border border-white/10 bg-white">
+        <div className="absolute left-4 top-2 h-2.5 w-28 rounded-full bg-black" />
+        <div className="absolute left-8 top-6 h-2.5 w-20 rounded-full bg-red-700" />
+        <div className="absolute inset-x-0 top-10 h-14 bg-[linear-gradient(90deg,_#6f1d1b_0%,_#1b263b_50%,_#6f1d1b_100%)]" />
+        <div className="absolute left-1/2 top-14 h-10 w-10 -translate-x-1/2 rounded-full border-2 border-white bg-[#1b263b]" />
+        <div className="absolute inset-x-0 bottom-0 h-6 bg-[#a92907]" />
       </div>
     );
   }
 
-  if (template === "minimal") {
+  if (template === "blue-black") {
     return (
-      <div className="relative h-28 overflow-hidden rounded-[18px] border border-white/10 bg-[linear-gradient(180deg,_#314b66_0%,_#18263a_42%,_#060c14_100%)]">
-        <div className="absolute inset-x-0 bottom-0 h-16 bg-[linear-gradient(180deg,_transparent,_rgba(3,8,15,0.92))]" />
-        <div className="absolute left-3 top-3 h-2.5 w-14 rounded-full bg-white/65" />
-        <div className="absolute inset-x-3 bottom-5 h-3 w-4/5 rounded-full bg-paper/90" />
-        <div className="absolute bottom-3 left-3 h-2.5 w-3/5 rounded-full bg-white/50" />
+      <div className="relative h-28 overflow-hidden rounded-[18px] border border-white/10 bg-black">
+        <div className="absolute inset-x-0 top-0 h-7 bg-[#075272]" />
+        <div className="absolute left-5 top-2 h-2.5 w-24 rounded-full bg-white" />
+        <div className="absolute inset-x-0 top-7 h-14 bg-[linear-gradient(135deg,_#d8dde4,_#334155)]" />
+        <div className="absolute left-4 bottom-6 h-3 w-28 rounded-full bg-yellow-300" />
+        <div className="absolute bottom-3 left-4 h-2.5 w-20 rounded-full bg-white" />
       </div>
     );
   }
 
-  if (template === "bulletin") {
+  if (template === "brown-bar") {
     return (
-      <div className="relative h-28 overflow-hidden rounded-[18px] border border-white/10 bg-[linear-gradient(135deg,_#081019_0%,_#0d1a2d_100%)]">
-        <div className="absolute left-3 top-3 h-[calc(100%-24px)] w-[38%] rounded-[14px] bg-[linear-gradient(180deg,_#2d5475,_#162233)]" />
-        <div className="absolute right-3 top-3 h-2.5 w-24 rounded-full bg-gold/85" />
-        <div className="absolute right-3 top-9 h-3 w-32 rounded-full bg-white/85" />
-        <div className="absolute right-3 top-14 h-3 w-28 rounded-full bg-white/70" />
-        <div className="absolute right-3 top-20 h-2.5 w-24 rounded-full bg-white/40" />
+      <div className="relative h-28 overflow-hidden rounded-[18px] border border-white/10 bg-[linear-gradient(180deg,_#475569,_#020617)]">
+        <div className="absolute bottom-8 left-3 h-5 w-[calc(100%-24px)] bg-[#8d4a2f]" />
+        <div className="absolute bottom-9 left-5 h-2.5 w-28 rounded-full bg-white" />
+        <div className="absolute bottom-3 left-3 h-3 w-32 rounded-full bg-white" />
+        <div className="absolute bottom-3 left-0 h-16 w-1.5 bg-yellow-300" />
       </div>
     );
   }
 
-  if (template === "pulse") {
+  if (template === "circle-montage") {
     return (
-      <div className="relative h-28 overflow-hidden rounded-[18px] border border-white/10 bg-[linear-gradient(135deg,_#240d10_0%,_#08131b_48%,_#12314a_100%)]">
-        <div className="absolute -right-4 top-2 h-24 w-20 rotate-[18deg] rounded-[20px] bg-coral/40" />
-        <div className="absolute left-3 top-3 h-2.5 w-14 rounded-full bg-coral/85" />
-        <div className="absolute left-3 bottom-8 h-3 w-3/4 rounded-full bg-paper/90" />
-        <div className="absolute bottom-4 left-3 h-2.5 w-1/2 rounded-full bg-white/45" />
+      <div className="relative h-28 overflow-hidden rounded-[18px] border border-white/10 bg-[linear-gradient(180deg,_#94a3b8,_#020617)]">
+        <div className="absolute inset-x-0 top-0 h-12 bg-[linear-gradient(90deg,_#64748b_50%,_#334155_50%)]" />
+        <div className="absolute right-5 top-10 h-9 w-9 rounded-full border-2 border-white bg-slate-500" />
+        <div className="absolute bottom-8 left-3 h-3 w-28 rounded-full bg-white" />
+        <div className="absolute bottom-4 left-3 h-2.5 w-20 rounded-full bg-white/70" />
+      </div>
+    );
+  }
+
+  if (template === "history-date") {
+    return (
+      <div className="relative h-28 overflow-hidden rounded-[18px] border border-white/10 bg-[linear-gradient(180deg,_#9ca3af,_#030712)]">
+        <div className="absolute right-5 top-9 h-10 w-10 rounded-full border-2 border-white bg-slate-300" />
+        <div className="absolute bottom-8 left-5 h-5 w-28 rounded-full bg-[linear-gradient(90deg,_#fb923c,_#ffffff,_#22c55e)]" />
+        <div className="absolute bottom-3 left-5 h-2 w-24 bg-[linear-gradient(90deg,_#fb923c,_#ffffff,_#22c55e)]" />
+      </div>
+    );
+  }
+
+  if (template === "regional-bold") {
+    return (
+      <div className="relative h-28 overflow-hidden rounded-[18px] border border-white/10 bg-[linear-gradient(180deg,_#475569,_#030712)]">
+        <div className="absolute left-1/2 top-0 h-16 w-1.5 bg-yellow-300 shadow-[0_0_12px_#fde047]" />
+        <div className="absolute bottom-7 left-3 h-3 w-32 rounded-full bg-orange-500" />
+        <div className="absolute bottom-3 left-3 h-3 w-24 rounded-full bg-white" />
+      </div>
+    );
+  }
+
+  if (template === "yellow-question") {
+    return (
+      <div className="relative h-28 overflow-hidden rounded-[18px] border border-white/10 bg-[linear-gradient(180deg,_#334155,_#020617)]">
+        <div className="absolute left-6 top-10 h-10 w-10 rounded-full border-2 border-white bg-slate-400" />
+        <div className="absolute bottom-9 left-4 h-3 w-36 rounded-full bg-yellow-300" />
+        <div className="absolute bottom-5 left-8 h-2.5 w-24 rounded-full bg-white" />
+        <div className="absolute inset-x-0 bottom-0 h-4 bg-yellow-300" />
+      </div>
+    );
+  }
+
+  if (template === "legacy-poster") {
+    return (
+      <div className="relative h-28 overflow-hidden rounded-[18px] border border-white/10 bg-[linear-gradient(180deg,_#94a3b8,_#020617)]">
+        <div className="absolute left-5 top-12 h-8 w-8 rounded-full border-2 border-white bg-slate-500" />
+        <div className="absolute right-5 top-12 h-8 w-8 rounded-full border-2 border-white bg-slate-500" />
+        <div className="absolute bottom-8 left-6 h-3 w-28 rounded-full bg-[#b7d4aa]" />
+        <div className="absolute bottom-4 left-8 h-2.5 w-24 rounded-full bg-white" />
+      </div>
+    );
+  }
+
+  if (template === "targeted-card") {
+    return (
+      <div className="relative h-28 overflow-hidden rounded-[18px] border border-white/10 bg-[linear-gradient(180deg,_#1e293b,_#020617)]">
+        <div className="absolute right-4 top-8 h-9 w-16 rounded border-2 border-yellow-300 bg-white" />
+        <div className="absolute inset-x-5 bottom-8 h-5 bg-red-600" />
+        <div className="absolute bottom-3 left-5 h-3 w-28 rounded-full bg-white" />
+      </div>
+    );
+  }
+
+  if (template === "cyan-pattern") {
+    return (
+      <div className="relative h-28 overflow-hidden rounded-[18px] border border-white/10 bg-[linear-gradient(90deg,_#334155_50%,_#111827_50%)]">
+        <div className="absolute bottom-10 left-4 h-3 w-36 rounded-full bg-cyan-300" />
+        <div className="absolute bottom-6 left-10 h-px w-20 bg-white" />
+        <div className="absolute bottom-0 left-0 h-5 w-full bg-cyan-300" />
       </div>
     );
   }
 
   return (
-    <div className="relative h-28 overflow-hidden rounded-[18px] border border-white/10 bg-[linear-gradient(160deg,_#17304f_0%,_#0b1524_55%,_#060c14_100%)]">
-      <div className="absolute inset-x-3 top-3 h-[45%] rounded-[16px] bg-[linear-gradient(180deg,_#456d98_0%,_#1d2f46_100%)]" />
-      <div className="absolute inset-x-3 bottom-3 rounded-[16px] bg-black/55 p-3">
-        <div className="h-2.5 w-16 rounded-full bg-white/70" />
-        <div className="mt-3 h-3 w-4/5 rounded-full bg-paper/90" />
-        <div className="mt-2 h-2.5 w-3/5 rounded-full bg-white/45" />
-      </div>
+    <div className="relative h-28 overflow-hidden rounded-[18px] border border-white/10 bg-[linear-gradient(180deg,_#475569,_#020617)]">
+      <div className="absolute inset-x-3 bottom-8 h-7 rounded bg-red-600" />
+      <div className="absolute bottom-10 left-5 h-3 w-32 rounded-full bg-white" />
+      <div className="absolute bottom-3 left-0 h-5 w-full bg-white" />
+      <div className="absolute bottom-4 left-7 h-2.5 w-28 rounded-full bg-red-600" />
     </div>
   );
 }

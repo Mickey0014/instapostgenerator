@@ -7,36 +7,96 @@ export const STYLE_OPTIONS = [
 
 export const TEMPLATE_OPTIONS = [
   {
-    value: "editorial",
-    label: "Editorial Split",
-    description: "Strong image on top with a grounded newsroom text panel."
+    value: "red-alert",
+    label: "Red Alert",
+    description: "Dark photo poster with a red headline strap and bottom question bar."
   },
   {
-    value: "spotlight",
-    label: "Spotlight Card",
-    description: "Full-bleed visual with a bold glass card for the story angle."
+    value: "split-caption",
+    label: "Split Caption",
+    description: "White headline top, split image body, and solid color footer caption."
   },
   {
-    value: "minimal",
-    label: "Minimal Overlay",
-    description: "Immersive photo treatment with a clean lower-third headline."
+    value: "blue-black",
+    label: "Blue Black",
+    description: "Bold blue header, image middle, and black explainer panel."
   },
   {
-    value: "bulletin",
-    label: "Bulletin Frame",
-    description: "Structured bulletin layout for sharper, update-driven posts."
+    value: "brown-bar",
+    label: "Brown Bar",
+    description: "Full-image background with a compact brown headline block."
   },
   {
-    value: "pulse",
-    label: "Pulse Angle",
-    description: "A more dynamic, high-contrast design for big trending stories."
+    value: "circle-montage",
+    label: "Circle Montage",
+    description: "Stacked news image treatment with circular inset accents."
+  },
+  {
+    value: "history-date",
+    label: "History Date",
+    description: "Archive-style poster with a large date row and progress accent."
+  },
+  {
+    value: "regional-bold",
+    label: "Regional Bold",
+    description: "Full-bleed political/news style with large orange and white text."
+  },
+  {
+    value: "yellow-question",
+    label: "Yellow Question",
+    description: "Dark corporate-style poster with yellow question headline and footer."
+  },
+  {
+    value: "legacy-poster",
+    label: "Legacy Poster",
+    description: "Dignified lower title block with two circular supporting frames."
+  },
+  {
+    value: "targeted-card",
+    label: "Targeted Card",
+    description: "Dramatic background, floating quote card, and red takedown strap."
+  },
+  {
+    value: "cyan-pattern",
+    label: "Cyan Pattern",
+    description: "High-impact split narrative with cyan headline and bottom question band."
   }
 ];
+
+const TEMPLATE_IMAGE_SLOT_MAP = {
+  "split-caption": {
+    circle: "Circle Image",
+    second: "Right Image"
+  },
+  "blue-black": {
+    second: "Right Image"
+  },
+  "circle-montage": {
+    circle: "Circle Image",
+    second: "Second Image"
+  },
+  "history-date": {
+    circle: "Circle Image"
+  },
+  "yellow-question": {
+    circle: "Circle Image"
+  },
+  "legacy-poster": {
+    circle: "Circle Images"
+  },
+  "cyan-pattern": {
+    second: "Right Image"
+  }
+};
 
 export function getStyleLabel(styleKey) {
   return STYLE_OPTIONS.find((style) => style.key === styleKey)?.label || "Professional";
 }
 
 export function getTemplateLabel(templateValue) {
-  return TEMPLATE_OPTIONS.find((template) => template.value === templateValue)?.label || "Editorial Split";
+  return TEMPLATE_OPTIONS.find((template) => template.value === templateValue)?.label || "Red Alert";
+}
+
+export function getTemplateImageSlots(templateValue) {
+  return TEMPLATE_IMAGE_SLOT_MAP[templateValue] || {};
 }
