@@ -408,6 +408,9 @@ function drawPosterMedia(context, media, mediaMeta, width, height, options = {})
   }
 
   context.save();
+  context.beginPath();
+  context.rect(x, y, frameWidth, frameHeight);
+  context.clip();
   context.filter = filter;
   drawMediaCover(context, media, x, y, frameWidth, frameHeight, focusY, focusX, zoom);
   context.restore();
@@ -571,10 +574,12 @@ function drawRedAlertTemplate(context, article, design, settings, media, mediaMe
 function drawSplitCaptionTemplate(context, article, design, settings, media, mediaMeta, width, height, mediaSlots = {}) {
   const { headline, subheadline } = buildDisplayCopy(article, design);
   const font = settings.fontFamily;
-  const circleMedia = mediaSlots.circle || media;
-  const circleMeta = mediaSlots.circleMeta || mediaMeta;
+  const primaryMedia = mediaSlots.primary || media;
+  const primaryMeta = mediaSlots.primaryMeta || mediaMeta;
   const secondMedia = mediaSlots.second || media;
   const secondMeta = mediaSlots.secondMeta || mediaMeta;
+  const circleMedia = mediaSlots.circle || primaryMedia;
+  const circleMeta = mediaSlots.circleMeta || primaryMeta;
 
   context.fillStyle = "#ffffff";
   context.fillRect(0, 0, width, height);
@@ -594,7 +599,7 @@ function drawSplitCaptionTemplate(context, article, design, settings, media, med
 
   const imageY = 202;
   const imageHeight = 946;
-  drawPosterMedia(context, media, mediaMeta, width / 2, imageHeight, { x: 0, y: imageY, frameWidth: width / 2, frameHeight: imageHeight, focusX: 0.26, focusY: 0.28 });
+  drawPosterMedia(context, primaryMedia, primaryMeta, width / 2, imageHeight, { x: 0, y: imageY, frameWidth: width / 2, frameHeight: imageHeight, focusX: 0.26, focusY: 0.28 });
   drawPosterMedia(context, secondMedia, secondMeta, width / 2, imageHeight, { x: width / 2, y: imageY, frameWidth: width / 2, frameHeight: imageHeight, focusX: 0.74, focusY: 0.28, filter: "grayscale(0.62) brightness(0.7) contrast(1.04)" });
   context.fillStyle = "rgba(0,0,0,0.18)";
   context.fillRect(width / 2, imageY, width / 2, imageHeight);
@@ -620,6 +625,8 @@ function drawSplitCaptionTemplate(context, article, design, settings, media, med
 function drawBlueBlackTemplate(context, article, design, settings, media, mediaMeta, width, height, mediaSlots = {}) {
   const { headline, subheadline } = buildDisplayCopy(article, design);
   const font = settings.fontFamily;
+  const primaryMedia = mediaSlots.primary || media;
+  const primaryMeta = mediaSlots.primaryMeta || mediaMeta;
   const secondMedia = mediaSlots.second || null;
   const secondMeta = mediaSlots.secondMeta || null;
 
@@ -640,24 +647,24 @@ function drawBlueBlackTemplate(context, article, design, settings, media, mediaM
   });
 
   if (secondMedia) {
-    drawPosterMedia(context, media, mediaMeta, width / 2, 780, { x: 0, y: 232, frameWidth: width / 2, frameHeight: 780, focusX: 0.42, focusY: 0.26 });
+    drawPosterMedia(context, primaryMedia, primaryMeta, width / 2, 780, { x: 0, y: 232, frameWidth: width / 2, frameHeight: 780, focusX: 0.42, focusY: 0.26 });
     drawPosterMedia(context, secondMedia, secondMeta, width / 2, 780, { x: width / 2, y: 232, frameWidth: width / 2, frameHeight: 780, focusX: 0.58, focusY: 0.26 });
   } else {
-    drawPosterMedia(context, media, mediaMeta, width, 780, { x: 0, y: 232, frameWidth: width, frameHeight: 780, focusY: 0.26 });
+    drawPosterMedia(context, primaryMedia, primaryMeta, width, 780, { x: 0, y: 232, frameWidth: width, frameHeight: 780, focusY: 0.26 });
   }
   context.fillStyle = "#000000";
   context.fillRect(0, 1012, width, height - 1012);
 
   drawFittedText(context, subheadline, {
     x: 98,
-    y: 1094,
+    y: 1068,
     maxWidth: width - 196,
     maxLines: 4,
-    maxFontSize: 58,
-    minFontSize: 34,
+    maxFontSize: 50,
+    minFontSize: 28,
     fontFamily: font,
     fontWeight: 700,
-    lineHeightRatio: 1.2,
+    lineHeightRatio: 1.12,
     color: "#ffffff"
   });
 }
@@ -703,14 +710,18 @@ function drawBrownBarTemplate(context, article, design, settings, media, mediaMe
 function drawCircleMontageTemplate(context, article, design, settings, media, mediaMeta, width, height, mediaSlots = {}) {
   const { headline, subheadline } = buildDisplayCopy(article, design);
   const font = settings.fontFamily;
-  const circleMedia = mediaSlots.circle || media;
-  const circleMeta = mediaSlots.circleMeta || mediaMeta;
+  const primaryMedia = mediaSlots.primary || media;
+  const primaryMeta = mediaSlots.primaryMeta || mediaMeta;
   const secondMedia = mediaSlots.second || media;
   const secondMeta = mediaSlots.secondMeta || mediaMeta;
+  const backgroundMedia = mediaSlots.background || primaryMedia;
+  const backgroundMeta = mediaSlots.backgroundMeta || primaryMeta;
+  const circleMedia = mediaSlots.circle || secondMedia || primaryMedia;
+  const circleMeta = mediaSlots.circleMeta || secondMeta || primaryMeta;
 
-  drawPosterMedia(context, media, mediaMeta, width / 2, 660, { x: 0, y: 0, frameWidth: width / 2, frameHeight: 660, focusX: 0.32, focusY: 0.22 });
+  drawPosterMedia(context, primaryMedia, primaryMeta, width / 2, 660, { x: 0, y: 0, frameWidth: width / 2, frameHeight: 660, focusX: 0.32, focusY: 0.22 });
   drawPosterMedia(context, secondMedia, secondMeta, width / 2, 660, { x: width / 2, y: 0, frameWidth: width / 2, frameHeight: 660, focusX: 0.68, focusY: 0.22 });
-  drawPosterMedia(context, media, mediaMeta, width, height - 620, { x: 0, y: 620, frameWidth: width, frameHeight: height - 620, focusY: 0.52, filter: "brightness(0.88) contrast(1.02) saturate(1.02)" });
+  drawPosterMedia(context, backgroundMedia, backgroundMeta, width, height - 620, { x: 0, y: 620, frameWidth: width, frameHeight: height - 620, focusY: 0.52, filter: "brightness(0.88) contrast(1.02) saturate(1.02)" });
   drawBottomShade(context, width, height, 0.28, 0.78);
 
   drawCircleImage(context, circleMedia, width - 180, 610, 124, { mediaMeta: circleMeta, stroke: "#ffffff", lineWidth: 7, focusX: 0.72 });
@@ -876,13 +887,15 @@ function drawYellowQuestionTemplate(context, article, design, settings, media, m
 function drawLegacyPosterTemplate(context, article, design, settings, media, mediaMeta, width, height, mediaSlots = {}) {
   const { headline, subheadline } = buildDisplayCopy(article, design);
   const font = settings.fontFamily;
-  const circleMedia = mediaSlots.circle || media;
-  const circleMeta = mediaSlots.circleMeta || mediaMeta;
+  const leftCircleMedia = mediaSlots.circleLeft || mediaSlots.circle || media;
+  const leftCircleMeta = mediaSlots.circleLeftMeta || mediaSlots.circleMeta || mediaMeta;
+  const rightCircleMedia = mediaSlots.circleRight || mediaSlots.circle || leftCircleMedia;
+  const rightCircleMeta = mediaSlots.circleRightMeta || mediaSlots.circleMeta || leftCircleMeta;
 
   drawPosterMedia(context, media, mediaMeta, width, height, { focusY: 0.18, filter: "brightness(0.72) contrast(1.04) saturate(0.92)" });
   drawBottomShade(context, width, height, 0.34, 1);
-  drawCircleImage(context, circleMedia, 296, 694, 124, { mediaMeta: circleMeta, stroke: "#ffffff", lineWidth: 6, focusX: 0.32 });
-  drawCircleImage(context, circleMedia, width - 298, 694, 124, { mediaMeta: circleMeta, stroke: "#ffffff", lineWidth: 6, focusX: 0.72 });
+  drawCircleImage(context, leftCircleMedia, 296, 694, 124, { mediaMeta: leftCircleMeta, stroke: "#ffffff", lineWidth: 6, focusX: 0.32 });
+  drawCircleImage(context, rightCircleMedia, width - 298, 694, 124, { mediaMeta: rightCircleMeta, stroke: "#ffffff", lineWidth: 6, focusX: 0.72 });
   drawFittedText(context, headline, {
     x: width / 2,
     y: 930,
@@ -982,10 +995,12 @@ function drawTargetedCardTemplate(context, article, design, settings, media, med
 function drawCyanPatternTemplate(context, article, design, settings, media, mediaMeta, width, height, mediaSlots = {}) {
   const { headline, subheadline } = buildDisplayCopy(article, design);
   const font = settings.fontFamily;
+  const primaryMedia = mediaSlots.primary || media;
+  const primaryMeta = mediaSlots.primaryMeta || mediaMeta;
   const secondMedia = mediaSlots.second || media;
   const secondMeta = mediaSlots.secondMeta || mediaMeta;
 
-  drawPosterMedia(context, media, mediaMeta, width / 2, height, { x: 0, y: 0, frameWidth: width / 2, frameHeight: height, focusX: 0.32, focusY: 0.22, filter: "brightness(0.7) contrast(1.12) saturate(0.9)" });
+  drawPosterMedia(context, primaryMedia, primaryMeta, width / 2, height, { x: 0, y: 0, frameWidth: width / 2, frameHeight: height, focusX: 0.32, focusY: 0.22, filter: "brightness(0.7) contrast(1.12) saturate(0.9)" });
   drawPosterMedia(context, secondMedia, secondMeta, width / 2, height, { x: width / 2, y: 0, frameWidth: width / 2, frameHeight: height, focusX: 0.68, focusY: 0.22, filter: "brightness(0.82) contrast(1.16) saturate(1.18)" });
   drawBottomShade(context, width, height, 0.4, 0.96);
 

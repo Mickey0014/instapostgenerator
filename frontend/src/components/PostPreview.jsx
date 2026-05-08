@@ -20,25 +20,28 @@ export default function PostPreview({
   settings,
   templateImageIds = {},
   onImageUpload,
-  onSelectImage
+  onSelectImage,
+  onSelectTemplateImage
 }) {
   const canvasRef = useRef(null);
   const fileInputRef = useRef(null);
-  const circleInputRef = useRef(null);
-  const secondInputRef = useRef(null);
+  const slotInputRefs = useRef({});
 
   const selectedImage = useMemo(
     () => images.find((image) => image.id === selectedImageId) || images[0] || null,
     [images, selectedImageId]
   );
   const templateSlots = getTemplateImageSlots(settings.template);
-  const circleImage = useMemo(
-    () => images.find((image) => image.id === templateImageIds.circle) || null,
-    [images, templateImageIds.circle]
-  );
-  const secondImage = useMemo(
-    () => images.find((image) => image.id === templateImageIds.second) || null,
-    [images, templateImageIds.second]
+  const slotEntries = useMemo(() => Object.entries(templateSlots), [templateSlots]);
+  const templateSlotImages = useMemo(
+    () =>
+      slotEntries.reduce((accumulator, [slot]) => {
+        accumulator[slot] =
+          images.find((image) => image.id === templateImageIds[slot]) ||
+          (slot === "primary" ? selectedImage : null);
+        return accumulator;
+      }, {}),
+    [images, selectedImage, slotEntries, templateImageIds]
   );
 
   useEffect(() => {
@@ -49,15 +52,20 @@ export default function PostPreview({
     async function renderCanvas() {
       try {
         await ensureCanvasFontsLoaded(settings.fontFamily);
-        const [image, circleSlotImage, secondSlotImage] = await Promise.all([
+        const [image, ...slotImages] = await Promise.all([
           loadImage(selectedImage?.proxyUrl),
-          loadImage(circleImage?.proxyUrl),
-          loadImage(secondImage?.proxyUrl)
+          ...slotEntries.map(([slot]) => loadImage(templateSlotImages[slot]?.proxyUrl))
         ]);
 
         if (cancelled) {
           return;
         }
+
+        const mediaSlots = slotEntries.reduce((accumulator, [slot], index) => {
+          accumulator[slot] = slotImages[index];
+          accumulator[`${slot}Meta`] = templateSlotImages[slot];
+          return accumulator;
+        }, {});
 
         drawInstagramTemplate(context, {
           article,
@@ -65,12 +73,7 @@ export default function PostPreview({
           settings,
           media: image,
           mediaMeta: selectedImage,
-          mediaSlots: {
-            circle: circleSlotImage,
-            circleMeta: circleImage,
-            second: secondSlotImage,
-            secondMeta: secondImage
-          },
+          mediaSlots,
           width: canvas.width,
           height: canvas.height
         });
@@ -97,7 +100,7 @@ export default function PostPreview({
     return () => {
       cancelled = true;
     };
-  }, [article, circleImage, design, secondImage, selectedImage, settings]);
+  }, [article, design, selectedImage, settings, slotEntries, templateSlotImages]);
 
   const handleDownload = () => {
     const canvas = canvasRef.current;
@@ -177,60 +180,63 @@ export default function PostPreview({
             Upload Image
           </button>
         </div>
-        {templateSlots.circle || templateSlots.second ? (
+        {slotEntries.length ? (
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            {templateSlots.circle ? (
-              <div className="rounded-[20px] border border-white/10 bg-white/5 p-3">
-                <p className="text-xs uppercase tracking-[0.22em] text-slate">{templateSlots.circle}</p>
+            {slotEntries.map(([slot, label]) => {
+              const slotImage = templateSlotImages[slot];
+              const isCircleSlot = slot.toLowerCase().includes("circle");
+
+              return (
+                <div key={slot} className="rounded-[20px] border border-white/10 bg-white/5 p-3">
+                <p className="text-xs uppercase tracking-[0.22em] text-slate">{label}</p>
                 <div className="mt-3 flex items-center gap-3">
-                  {circleImage ? (
-                    <img src={circleImage.proxyUrl} alt={circleImage.alt} className="h-14 w-14 rounded-full object-cover" />
+                  {slotImage ? (
+                    <img
+                      src={slotImage.proxyUrl}
+                      alt={slotImage.alt}
+                      className={`h-14 w-14 object-cover ${isCircleSlot ? "rounded-full" : "rounded-[14px]"}`}
+                    />
                   ) : (
-                    <div className="h-14 w-14 rounded-full border border-dashed border-white/20 bg-ink/60" />
+                    <div
+                      className={`h-14 w-14 border border-dashed border-white/20 bg-ink/60 ${
+                        isCircleSlot ? "rounded-full" : "rounded-[14px]"
+                      }`}
+                    />
                   )}
                   <input
-                    ref={circleInputRef}
+                    ref={(node) => {
+                      slotInputRefs.current[slot] = node;
+                    }}
                     type="file"
                     accept="image/*"
-                    onChange={(event) => handleFileChange(event, "circle")}
+                    onChange={(event) => handleFileChange(event, slot)}
                     className="sr-only"
                   />
                   <button
                     type="button"
-                    onClick={() => circleInputRef.current?.click()}
+                    onClick={() => slotInputRefs.current[slot]?.click()}
                     className="min-h-[44px] flex-1 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold text-paper transition hover:border-sky/50 hover:bg-white/15"
                   >
-                    Upload Circle
+                    Upload
                   </button>
                 </div>
-              </div>
-            ) : null}
-            {templateSlots.second ? (
-              <div className="rounded-[20px] border border-white/10 bg-white/5 p-3">
-                <p className="text-xs uppercase tracking-[0.22em] text-slate">{templateSlots.second}</p>
-                <div className="mt-3 flex items-center gap-3">
-                  {secondImage ? (
-                    <img src={secondImage.proxyUrl} alt={secondImage.alt} className="h-14 w-14 rounded-[14px] object-cover" />
-                  ) : (
-                    <div className="h-14 w-14 rounded-[14px] border border-dashed border-white/20 bg-ink/60" />
-                  )}
-                  <input
-                    ref={secondInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={(event) => handleFileChange(event, "second")}
-                    className="sr-only"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => secondInputRef.current?.click()}
-                    className="min-h-[44px] flex-1 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold text-paper transition hover:border-sky/50 hover:bg-white/15"
+                {images.length ? (
+                  <select
+                    value={templateImageIds[slot] || ""}
+                    onChange={(event) => onSelectTemplateImage(slot, event.target.value)}
+                    className="mt-3 w-full rounded-[14px] border border-white/10 bg-ink/80 px-3 py-2 text-sm text-paper outline-none transition focus:border-sky/60"
                   >
-                    Upload Second
-                  </button>
-                </div>
+                    <option value="">Use main image until uploaded</option>
+                    {images.map((image, index) => (
+                      <option key={image.id} value={image.id}>
+                        {index + 1}. {image.source} - {image.alt}
+                      </option>
+                    ))}
+                  </select>
+                ) : null}
               </div>
-            ) : null}
+              );
+            })}
           </div>
         ) : null}
         <div className="mt-3 grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 xl:grid-cols-4">

@@ -144,6 +144,10 @@ function normalizeSourceImages(sourceImages = []) {
 function imagePriority(image) {
   let score = 0;
 
+  if (image.source && image.source !== "Unsplash" && image.source !== "Pexels") {
+    score += 80;
+  }
+
   if (image.source === "Unsplash" || image.source === "Pexels") {
     score += 50;
   }
@@ -188,7 +192,13 @@ function rankImages(images) {
 }
 
 function hasStrongArticleImage(images) {
-  return images.some((image) => image.source === "Article" && !image.textRisk);
+  return images.some(
+    (image) =>
+      image.source &&
+      image.source !== "Unsplash" &&
+      image.source !== "Pexels" &&
+      !image.textRisk
+  );
 }
 
 async function fetchRelevantImages({

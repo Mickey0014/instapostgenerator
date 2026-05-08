@@ -170,7 +170,7 @@ async function generateFromLink(req, res, next) {
       keywords: post.keywords,
       fallbackImage: article.image,
       preferredQuery: post.suggestedImageQuery || article.title,
-      sourceImages: article.sourceArticles || []
+      sourceImages: [...(article.images || []), ...(article.sourceArticles || [])]
     });
 
     res.json({
@@ -241,7 +241,7 @@ async function generatePost(req, res, next) {
       keywords: post.keywords,
       fallbackImage: article.image,
       preferredQuery: post.suggestedImageQuery || prompt,
-      sourceImages: article.sourceArticles || []
+      sourceImages: [...(article.images || []), ...(article.sourceArticles || [])]
     });
 
     res.json({

@@ -6,7 +6,7 @@ import ImageEditor from "./components/ImageEditor";
 import PostPreview from "./components/PostPreview"; 
 import VideoStudio from "./components/VideoStudio";
 import { generateFromLink, generateFromPrompt, searchNews } from "./lib/api";
-import { STYLE_OPTIONS } from "./lib/postOptions";
+import { getTemplateImageSlots, STYLE_OPTIONS } from "./lib/postOptions";
 
 const INITIAL_MESSAGES = [
   {
@@ -84,6 +84,22 @@ function normalizeDesignVariants(designVariants, fallbackDesign) {
   }, {});
 }
 
+function buildInitialTemplateImageIds(images, template) {
+  const slotKeys = Object.keys(getTemplateImageSlots(template));
+  const imageList = Array.isArray(images) ? images : [];
+  const hasPrimarySlot = slotKeys.includes("primary");
+
+  return slotKeys.reduce((accumulator, slotKey, index) => {
+    const sourceImage = slotKey === "primary" ? imageList[0] : imageList[index + (hasPrimarySlot ? 0 : 1)];
+
+    if (sourceImage?.id) {
+      accumulator[slotKey] = sourceImage.id;
+    }
+
+    return accumulator;
+  }, {});
+}
+
 export default function App() {
   const [messages, setMessages] = useState(INITIAL_MESSAGES);
   const [sourceHistory, setSourceHistory] = useState([]);
@@ -117,6 +133,19 @@ export default function App() {
       uploadedImagesRef.current.forEach((image) => URL.revokeObjectURL(image.proxyUrl));
     };
   }, []);
+
+  useEffect(() => {
+    if (!activeResult?.post?.images?.length) {
+      return;
+    }
+
+    const automaticIds = buildInitialTemplateImageIds(activeResult.post.images, imageSettings.template);
+
+    setTemplateImageIds((current) => ({
+      ...automaticIds,
+      ...current
+    }));
+  }, [activeResult, imageSettings.template]);
 
   const pushMessage = (message) => {
     setMessages((current) => [...current, { id: crypto.randomUUID(), ...message }]);
@@ -171,7 +200,7 @@ export default function App() {
     setDesignDrafts(cloneDesignVariants(normalizedDesignVariants));
     setSelectedStyle("professional");
     setSelectedImageId(result.post.images?.[0]?.id || "");
-    setTemplateImageIds({});
+    setTemplateImageIds(buildInitialTemplateImageIds(result.post.images, imageSettings.template));
     setUploadedImages((current) => {
       current.forEach((image) => URL.revokeObjectURL(image.proxyUrl));
       return [];
@@ -366,7 +395,7 @@ export default function App() {
     };
 
     setUploadedImages((current) => [...current, image]);
-    if (slot === "circle" || slot === "second") {
+    if (slot && slot !== "primary") {
       setTemplateImageIds((current) => ({ ...current, [slot]: image.id }));
     } else {
       setSelectedImageId(image.id);
@@ -405,6 +434,9 @@ export default function App() {
                   templateImageIds={templateImageIds}
                   onImageUpload={handleImageUpload}
                   onSelectImage={setSelectedImageId}
+                  onSelectTemplateImage={(slot, imageId) =>
+                    setTemplateImageIds((current) => ({ ...current, [slot]: imageId }))
+                  }
                 />
                 <CaptionSelector
                   activeCaption={activeCaption}

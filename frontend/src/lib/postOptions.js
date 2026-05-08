@@ -65,15 +65,19 @@ export const TEMPLATE_OPTIONS = [
 
 const TEMPLATE_IMAGE_SLOT_MAP = {
   "split-caption": {
-    circle: "Circle Image",
-    second: "Right Image"
+    primary: "Left Image",
+    second: "Right Image",
+    circle: "Circle Image"
   },
   "blue-black": {
+    primary: "Left Image",
     second: "Right Image"
   },
   "circle-montage": {
-    circle: "Circle Image",
-    second: "Second Image"
+    primary: "Top Left Image",
+    second: "Top Right Image",
+    background: "Main Background",
+    circle: "Circle Image"
   },
   "history-date": {
     circle: "Circle Image"
@@ -82,9 +86,11 @@ const TEMPLATE_IMAGE_SLOT_MAP = {
     circle: "Circle Image"
   },
   "legacy-poster": {
-    circle: "Circle Images"
+    circleLeft: "Left Circle",
+    circleRight: "Right Circle"
   },
   "cyan-pattern": {
+    primary: "Left Image",
     second: "Right Image"
   }
 };

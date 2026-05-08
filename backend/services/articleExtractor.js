@@ -46,6 +46,13 @@ function getMeta(document, key, attribute = "property") {
   return document.querySelector(selector)?.getAttribute("content") || "";
 }
 
+function getMetaValues(document, key, attribute = "property") {
+  const selector = `meta[${attribute}="${key}"]`;
+  return Array.from(document.querySelectorAll(selector))
+    .map((node) => cleanUrl(node.getAttribute("content") || ""))
+    .filter(Boolean);
+}
+
 function extractKeywords(title, text) {
   return dedupeStrings(keywordCandidates(`${title} ${text}`)).slice(0, 8);
 }
@@ -158,6 +165,35 @@ function buildTwitterVideoFromSyndication(payload) {
   };
 }
 
+function extractTwitterImagesFromSyndication(payload) {
+  const images = [
+    ...(Array.isArray(payload?.photos)
+      ? payload.photos.map((photo) => ({
+          image: cleanUrl(photo?.url || photo?.media_url_https || ""),
+          title: cleanText(photo?.alt_text || payload?.text || ""),
+          source: "X (formerly Twitter)"
+        }))
+      : []),
+    ...(Array.isArray(payload?.mediaDetails)
+      ? payload.mediaDetails
+          .filter((item) => item?.type === "photo" || item?.media_url_https)
+          .map((item) => ({
+            image: cleanUrl(item?.media_url_https || item?.media_url || ""),
+            title: cleanText(item?.ext_alt_text || payload?.text || ""),
+            source: "X (formerly Twitter)"
+          }))
+      : [])
+  ].filter((item) => item.image);
+
+  return dedupeStrings(images.map((item) => item.image)).map((image) => {
+    const match = images.find((item) => item.image === image);
+    return {
+      ...match,
+      image
+    };
+  });
+}
+
 async function fetchTwitterStatusContext(url) {
   const statusId = extractTwitterStatusId(url);
 
@@ -176,6 +212,8 @@ async function fetchTwitterStatusContext(url) {
       const tweetText = cleanupTweetText(payload.text || "");
 
       if (tweetText) {
+        const images = extractTwitterImagesFromSyndication(payload);
+
         return {
           title: buildTweetTitle(tweetText, cleanText(payload?.user?.name || "")),
           content: tweetText,
@@ -191,6 +229,7 @@ async function fetchTwitterStatusContext(url) {
               payload?.photos?.[0]?.url ||
               ""
           ),
+          images,
           video: buildTwitterVideoFromSyndication(payload)
         };
       }
@@ -247,8 +286,24 @@ async function fetchTwitterStatusContext(url) {
   }
 }
 
-function normalizeStorySeed({ title, content, source, url, image, publishedAt, author, video }) {
+function normalizeStorySeed({ title, content, source, url, image, images, publishedAt, author, video }) {
   const cleanContent = cleanText(content || title || "");
+  const normalizedImages = dedupeStrings(
+    [
+      ...(Array.isArray(images) ? images.map((item) => cleanUrl(item?.image || item?.url || item)) : []),
+      cleanUrl(image || "")
+    ].filter(Boolean)
+  ).map((imageUrl, index) => {
+    const matchingImage = Array.isArray(images)
+      ? images.find((item) => cleanUrl(item?.image || item?.url || item) === imageUrl)
+      : null;
+
+    return {
+      title: cleanText(matchingImage?.title || title || `Source image ${index + 1}`),
+      source: cleanText(matchingImage?.source || source || "Article"),
+      image: imageUrl
+    };
+  });
 
   return {
     title: cleanText(title || "Untitled story"),
@@ -256,7 +311,8 @@ function normalizeStorySeed({ title, content, source, url, image, publishedAt, a
     excerpt: cleanContent.slice(0, 280),
     source: cleanText(source || "Unknown source"),
     url: cleanUrl(url || ""),
-    image: cleanUrl(image || ""),
+    image: normalizedImages[0]?.image || cleanUrl(image || ""),
+    images: normalizedImages,
     publishedAt: cleanText(publishedAt || ""),
     author: cleanText(author || ""),
     keywords: extractKeywords(title || "", cleanContent),
@@ -368,6 +424,21 @@ async function extractArticleFromUrl(url) {
   const twitterStatus = isTwitterStatusUrl(validatedUrl)
     ? await fetchTwitterStatusContext(validatedUrl)
     : null;
+
+  if (twitterStatus?.content) {
+    return normalizeStorySeed({
+      title: twitterStatus.title,
+      content: twitterStatus.content,
+      source: twitterStatus.source,
+      url: validatedUrl.toString(),
+      image: twitterStatus.image,
+      images: twitterStatus.images,
+      publishedAt: twitterStatus.publishedAt,
+      author: twitterStatus.author,
+      video: twitterStatus.video
+    });
+  }
+
   const response = await axios.get(validatedUrl.toString(), {
     timeout: 20000,
     proxy: false,
@@ -392,10 +463,18 @@ async function extractArticleFromUrl(url) {
     "Untitled article";
   const preferredTitle = cleanText(twitterStatus?.title || "");
   const preferredDescription = cleanText(twitterStatus?.content || metaDescription);
-
   const title =
     preferredTitle ||
     fallbackTitle;
+  const documentImages = dedupeStrings([
+    ...(twitterStatus?.images || []).map((item) => item.image),
+    ...getMetaValues(document, "og:image"),
+    ...getMetaValues(document, "twitter:image", "name")
+  ]).map((imageUrl) => ({
+    title,
+    source: twitterStatus?.source || getMeta(document, "og:site_name") || validatedUrl.hostname.replace(/^www\./, ""),
+    image: imageUrl
+  }));
 
   const video = await extractVideoContext({
     document,
@@ -435,6 +514,7 @@ async function extractArticleFromUrl(url) {
       validatedUrl.hostname.replace(/^www\./, ""),
     url: validatedUrl.toString(),
     image: cleanUrl(twitterStatus?.image || getMeta(document, "og:image")),
+    images: documentImages,
     publishedAt:
       cleanText(twitterStatus?.publishedAt) ||
       cleanText(getMeta(document, "article:published_time")),
