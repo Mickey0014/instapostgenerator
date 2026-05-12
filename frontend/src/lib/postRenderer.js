@@ -426,9 +426,9 @@ function drawBottomShade(context, width, height, start = 0.42, strength = 0.96) 
   context.fillRect(0, height * start, width, height * (1 - start));
 }
 
-function drawTopShade(context, width, height, end = 0.22) {
+function drawTopShade(context, width, height, end = 0.22, strength = 0.48) {
   const shade = context.createLinearGradient(0, 0, 0, height * end);
-  shade.addColorStop(0, "rgba(0,0,0,0.48)");
+  shade.addColorStop(0, `rgba(0,0,0,${strength})`);
   shade.addColorStop(1, "rgba(0,0,0,0)");
   context.fillStyle = shade;
   context.fillRect(0, 0, width, height * end);
@@ -517,26 +517,30 @@ function formatPostDate(article) {
 function drawRedAlertTemplate(context, article, design, settings, media, mediaMeta, width, height) {
   const { headline, subheadline } = buildDisplayCopy(article, design);
   const font = settings.fontFamily;
+  const padding = Math.max(36, Math.min(140, Number(settings.padding) || 72));
+  const textColor = settings.color || "#ffffff";
+  const overlayOpacity = Math.max(0.1, Math.min(0.9, Number(settings.overlayOpacity) || 0.48));
+  const bottomShadeStrength = Math.min(1, 0.28 + overlayOpacity * 1.46);
 
   drawPosterMedia(context, media, mediaMeta, width, height, { focusY: 0.26, filter: "brightness(0.74) contrast(1.08) saturate(1.02)" });
-  drawTopShade(context, width, height);
-  drawBottomShade(context, width, height, 0.44, 0.98);
+  drawTopShade(context, width, height, 0.22, overlayOpacity);
+  drawBottomShade(context, width, height, 0.44, bottomShadeStrength);
 
   const headlineY = height * 0.68;
   const headlineHeight = 94;
   context.fillStyle = "#f01912";
-  withRoundedRect(context, 24, headlineY - 18, width - 48, headlineHeight, 8);
+  withRoundedRect(context, padding * 0.34, headlineY - 18, width - padding * 0.68, headlineHeight, 8);
   context.fill();
 
   drawFittedText(context, headline, {
     x: width / 2,
     y: headlineY,
-    maxWidth: width - 86,
+    maxWidth: width - padding * 2,
     maxLines: 1,
     maxFontSize: Math.min(settings.fontSize + 10, 104),
     minFontSize: 48,
     fontFamily: font,
-    color: "#ffffff",
+    color: textColor,
     align: "center",
     uppercase: true
   });
@@ -544,14 +548,14 @@ function drawRedAlertTemplate(context, article, design, settings, media, mediaMe
   drawFittedText(context, subheadline, {
     x: width / 2,
     y: headlineY + 132,
-    maxWidth: width - 150,
+    maxWidth: width - padding * 2,
     maxLines: 4,
-    maxFontSize: 46,
+    maxFontSize: Math.min(Math.max(settings.fontSize * 0.52, 34), 54),
     minFontSize: 28,
     fontFamily: font,
     fontWeight: 800,
     lineHeightRatio: 1.16,
-    color: "#ffffff",
+    color: textColor,
     align: "center"
   });
 
@@ -560,13 +564,13 @@ function drawRedAlertTemplate(context, article, design, settings, media, mediaMe
   drawFittedText(context, subheadline || headline, {
     x: width / 2,
     y: height - 52,
-    maxWidth: width - 140,
+    maxWidth: width - padding * 2,
     maxLines: 1,
-    maxFontSize: 40,
+    maxFontSize: Math.min(Math.max(settings.fontSize * 0.45, 28), 44),
     minFontSize: 24,
     fontFamily: font,
     fontWeight: 900,
-    color: "#f01912",
+    color: textColor,
     align: "center"
   });
 }
