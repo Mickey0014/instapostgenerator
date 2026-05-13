@@ -116,7 +116,11 @@ export default function App() {
   const [templateImageIds, setTemplateImageIds] = useState({});
   const [uploadedImages, setUploadedImages] = useState([]);
   const uploadedImagesRef = useRef([]);
-  const [videoOptions, setVideoOptions] = useState({ startTime: "00:00", endTime: "00:20" });
+  const [videoOptions, setVideoOptions] = useState({
+    startTime: "00:00",
+    endTime: "00:20",
+    template: "tamil-buzz"
+  });
 
   const activeCaption = captionDrafts[selectedStyle] || "";
   const activeDesign = designDrafts[selectedStyle] || { headline: "", subheadline: "" };
@@ -205,7 +209,11 @@ export default function App() {
       current.forEach((image) => URL.revokeObjectURL(image.proxyUrl));
       return [];
     });
-    setVideoOptions({ startTime: defaultStartTime, endTime: defaultEndTime });
+    setVideoOptions((current) => ({
+      startTime: defaultStartTime,
+      endTime: defaultEndTime,
+      template: current.template || "tamil-buzz"
+    }));
     if (remember) {
       pushPostHistory(result);
     }

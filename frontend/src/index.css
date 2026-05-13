@@ -75,6 +75,14 @@
 }
 
 @font-face {
+  font-family: "Baloo Thambi";
+  src: url("/fonts/BalooThambi-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
   font-family: "Barlow";
   src: url("/fonts/Barlow-Extra_Bold.ttf") format("truetype");
   font-weight: 800;
@@ -390,6 +398,22 @@
   font-family: "Mulish";
   src: url("/fonts/Mulish-ExtraBold.ttf") format("truetype");
   font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Open Sans ExtraBold";
+  src: url("/fonts/OpenSans-ExtraBold.ttf") format("truetype");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Squad";
+  src: url("/fonts/Squad-Bold-1.ttf") format("truetype");
+  font-weight: 700;
   font-style: normal;
   font-display: swap;
 }

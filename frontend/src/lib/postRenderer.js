@@ -3,6 +3,23 @@ const UI_FONT_FAMILY = "Inter";
 export const INSTAGRAM_EXPORT_WIDTH = 1080;
 export const INSTAGRAM_EXPORT_HEIGHT = 1350;
 export const INSTAGRAM_EXPORT_ASPECT_CLASS = "aspect-[4/5]";
+export const INSTAGRAM_REEL_WIDTH = 1080;
+export const INSTAGRAM_REEL_HEIGHT = 1920;
+export const INSTAGRAM_REEL_ASPECT_CLASS = "aspect-[9/16]";
+
+const TAMIL_BUZZ_TEMPLATE_SRC = "/templates/tamil-buzz-reel.png";
+const THRIVING_TN_TEMPLATE_SRC = "/templates/thriving-tn-reel.png";
+const VIDEO_TEMPLATE_OPTIONS = {
+  "tamil-buzz": {
+    src: TAMIL_BUZZ_TEMPLATE_SRC
+  },
+  "thriving-tn": {
+    src: THRIVING_TN_TEMPLATE_SRC,
+    chromaKey: true
+  }
+};
+const videoTemplatePromises = {};
+const videoTemplateAssets = {};
 
 export function buildDisplayCopy(article, design) {
   const headline = trimDisplayText(
@@ -20,14 +37,18 @@ export function buildDisplayCopy(article, design) {
   };
 }
 
-export async function ensureCanvasFontsLoaded(fontFamily) {
+export async function ensureCanvasFontsLoaded(fontFamily, extraFontFamilies = []) {
   if (typeof document === "undefined" || !document.fonts) {
     return;
   }
 
+  const fontFamilies = Array.from(new Set([fontFamily, ...extraFontFamilies].filter(Boolean)));
   const fontRequests = [
-    `700 72px "${fontFamily}"`,
-    `700 26px "${fontFamily}"`,
+    ...fontFamilies.flatMap((family) => [
+      `700 72px "${family}"`,
+      `400 72px "${family}"`,
+      `700 26px "${family}"`
+    ]),
     `500 28px "${UI_FONT_FAMILY}"`
   ];
 
@@ -37,6 +58,56 @@ export async function ensureCanvasFontsLoaded(fontFamily) {
   } catch (error) {
     // Fall back to immediate canvas rendering if the Font Loading API is unavailable.
   }
+}
+
+export async function ensureVideoTemplateAssetsLoaded() {
+  await Promise.all(Object.keys(VIDEO_TEMPLATE_OPTIONS).map((template) => loadVideoTemplateAsset(template)));
+}
+
+async function loadVideoTemplateAsset(template) {
+  const templateConfig = VIDEO_TEMPLATE_OPTIONS[template] || VIDEO_TEMPLATE_OPTIONS["tamil-buzz"];
+
+  if (videoTemplateAssets[template]) {
+    return videoTemplateAssets[template];
+  }
+
+  if (!videoTemplatePromises[template]) {
+    videoTemplatePromises[template] = loadImage(templateConfig.src).then((image) => {
+      const asset = templateConfig.chromaKey ? createGreenKeyedCanvas(image) : image;
+      videoTemplateAssets[template] = asset;
+      return asset;
+    });
+  }
+
+  return videoTemplatePromises[template];
+}
+
+function getLoadedVideoTemplateAsset(template) {
+  return videoTemplateAssets[template] || videoTemplateAssets["tamil-buzz"] || null;
+}
+
+function createGreenKeyedCanvas(image) {
+  const canvas = document.createElement("canvas");
+  canvas.width = image.naturalWidth;
+  canvas.height = image.naturalHeight;
+  const context = canvas.getContext("2d");
+  context.drawImage(image, 0, 0);
+
+  const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+  const data = imageData.data;
+
+  for (let index = 0; index < data.length; index += 4) {
+    const red = data[index];
+    const green = data[index + 1];
+    const blue = data[index + 2];
+
+    if (green > 210 && red < 36 && blue < 48) {
+      data[index + 3] = 0;
+    }
+  }
+
+  context.putImageData(imageData, 0, 0);
+  return canvas;
 }
 
 function trimDisplayText(text, maxLength) {
@@ -193,6 +264,23 @@ function drawMediaContain(context, media, x, y, width, height, scale = 1) {
     width: drawWidth,
     height: drawHeight
   };
+}
+
+function drawImageCover(context, image, x, y, width, height) {
+  const imageWidth = image?.naturalWidth || image?.width || 0;
+  const imageHeight = image?.naturalHeight || image?.height || 0;
+
+  if (!imageWidth || !imageHeight) {
+    return;
+  }
+
+  const scale = Math.max(width / imageWidth, height / imageHeight);
+  const drawWidth = imageWidth * scale;
+  const drawHeight = imageHeight * scale;
+  const drawX = x + (width - drawWidth) / 2;
+  const drawY = y + (height - drawHeight) / 2;
+
+  context.drawImage(image, drawX, drawY, drawWidth, drawHeight);
 }
 
 function softenTextArtifacts(context, media, frame, placement, mediaMeta) {
@@ -1549,143 +1637,168 @@ function drawPulseTemplate(context, article, design, settings, media, mediaMeta,
   drawTextLines(context, subLayout.lines, textX, subheadlineTop, subLayout.lineHeight);
 }
 
-export function drawVideoOverlayTemplate(context, options) {
-  const { article, design, settings, media, mediaMeta, width, height } = options;
+function drawTamilBuzzVideoTemplate(context, options) {
+  const { article, design, media, width, height } = options;
   const { headline, subheadline } = buildDisplayCopy(article, design);
-  const headerHeight = Math.min(330, 276 + Math.max(0, height - width) * 0.2);
+  const templateImage = getLoadedVideoTemplateAsset("tamil-buzz");
+  const font = "Baloo Thambi";
 
-  context.clearRect(0, 0, width, height);
-
-  const backgroundGradient = context.createLinearGradient(0, 0, width, height);
-  backgroundGradient.addColorStop(0, "#13253d");
-  backgroundGradient.addColorStop(0.46, "#0b1626");
-  backgroundGradient.addColorStop(1, "#060d16");
-  context.fillStyle = backgroundGradient;
+  context.fillStyle = "#000000";
   context.fillRect(0, 0, width, height);
-
-  const ambientGlow = context.createRadialGradient(
-    width * 0.18,
-    height * 0.12,
-    width * 0.02,
-    width * 0.18,
-    height * 0.12,
-    width * 0.46
-  );
-  ambientGlow.addColorStop(0, "rgba(141, 213, 255, 0.18)");
-  ambientGlow.addColorStop(1, "rgba(141, 213, 255, 0)");
-  context.fillStyle = ambientGlow;
-  context.fillRect(0, 0, width, height);
-
-  const headerCard = {
-    x: 54,
-    y: 46,
-    width: width - 108,
-    height: headerHeight
-  };
-  const videoFrame = {
-    x: 54,
-    y: headerCard.y + headerCard.height + 30,
-    width: width - 108,
-    height: height - (headerCard.y + headerCard.height + 30) - 54
-  };
-
-  context.save();
-  context.shadowColor = "rgba(0, 0, 0, 0.22)";
-  context.shadowBlur = 26;
-  withRoundedRect(context, headerCard.x, headerCard.y, headerCard.width, headerCard.height, 34);
-  context.fillStyle = "rgba(7, 14, 24, 0.86)";
-  context.fill();
-  context.restore();
-
-  context.save();
-  withRoundedRect(context, headerCard.x, headerCard.y, headerCard.width, headerCard.height, 34);
-  context.strokeStyle = "rgba(255,255,255,0.08)";
-  context.lineWidth = 2;
-  context.stroke();
-  context.restore();
-
-  drawSourceBadge(context, article, settings, headerCard.x + 30, headerCard.y + 24, 310);
-
-  const copyLayout = fitCopyPair(context, {
-    headline,
-    subheadline,
-    headlineOptions: {
-      fontFamily: settings.fontFamily,
-      fontWeight: 700,
-      maxFontSize: Math.min(settings.fontSize, 72),
-      minFontSize: 34,
-      maxWidth: headerCard.width - 60,
-      maxLines: 3,
-      lineHeightRatio: 0.94
-    },
-    subheadlineOptions: {
-      fontFamily: UI_FONT_FAMILY,
-      fontWeight: 500,
-      maxFontSize: 24,
-      minFontSize: 18,
-      maxWidth: headerCard.width - 60,
-      maxLines: 3,
-      lineHeightRatio: 1.28
-    },
-    gap: 22,
-    maxHeight: headerCard.height - 108
-  });
-
-  const textX = headerCard.x + 30;
-  const headlineTop = headerCard.y + 118;
-  context.fillStyle = settings.color;
-  context.font = `700 ${copyLayout.headlineLayout.fontSize}px "${settings.fontFamily}"`;
-  drawTextLines(context, copyLayout.headlineLayout.lines, textX, headlineTop, copyLayout.headlineLayout.lineHeight);
-
-  const subheadlineTop =
-    headlineTop + copyLayout.headlineLayout.lines.length * copyLayout.headlineLayout.lineHeight + 24;
-  context.fillStyle = "rgba(255,255,255,0.86)";
-  context.font = `500 ${copyLayout.subheadlineLayout.fontSize}px "${UI_FONT_FAMILY}"`;
-  drawTextLines(
-    context,
-    copyLayout.subheadlineLayout.lines,
-    textX,
-    subheadlineTop,
-    copyLayout.subheadlineLayout.lineHeight
-  );
-
-  context.save();
-  withRoundedRect(context, videoFrame.x, videoFrame.y, videoFrame.width, videoFrame.height, 36);
-  context.fillStyle = "rgba(4, 9, 16, 0.82)";
-  context.fill();
-  context.restore();
 
   if (media) {
-    const mediaPlacement = {
-      focusY: 0.5,
-      focusX: 0.5,
-      zoom: 1
-    };
-
     context.save();
-    withRoundedRect(context, videoFrame.x, videoFrame.y, videoFrame.width, videoFrame.height, 36);
-    context.clip();
-    drawMediaContain(context, media, videoFrame.x, videoFrame.y, videoFrame.width, videoFrame.height, 1);
-    softenTextArtifacts(context, media, videoFrame, mediaPlacement, mediaMeta);
+    context.filter = "brightness(0.82) contrast(1.08) saturate(1.04)";
+    drawMediaCover(context, media, 0, 0, width, height, 0.5, 0.5, 1);
     context.restore();
   }
 
-  const frameTint = context.createLinearGradient(0, videoFrame.y, 0, videoFrame.y + videoFrame.height);
-  frameTint.addColorStop(0, "rgba(255,255,255,0.02)");
-  frameTint.addColorStop(1, "rgba(3,8,15,0.18)");
-  context.save();
-  withRoundedRect(context, videoFrame.x, videoFrame.y, videoFrame.width, videoFrame.height, 36);
-  context.clip();
-  context.fillStyle = frameTint;
-  context.fillRect(videoFrame.x, videoFrame.y, videoFrame.width, videoFrame.height);
-  context.restore();
+  if (templateImage?.complete) {
+    drawImageCover(context, templateImage, 0, 0, width, height);
+  } else {
+    context.fillStyle = "rgba(0,0,0,0.74)";
+    context.fillRect(0, 0, width, height);
+  }
+
+  const textWidth = width - 132;
+  const headlineLayout = fitTextBlock(context, headline, {
+    fontFamily: font,
+    fontWeight: 400,
+    maxFontSize: 92,
+    minFontSize: 48,
+    maxWidth: textWidth,
+    maxLines: 5,
+    lineHeightRatio: 1.04
+  });
+  const subheadlineLayout = fitTextBlock(context, subheadline, {
+    fontFamily: font,
+    fontWeight: 400,
+    maxFontSize: 44,
+    minFontSize: 30,
+    maxWidth: textWidth,
+    maxLines: 3,
+    lineHeightRatio: 1.16
+  });
+  const gap = subheadline ? 22 : 0;
+  const totalTextHeight =
+    headlineLayout.lines.length * headlineLayout.lineHeight +
+    gap +
+    (subheadline ? subheadlineLayout.lines.length * subheadlineLayout.lineHeight : 0);
+  const textTop = Math.min(height * 0.62, Math.max(height * 0.36, height - 520 - totalTextHeight));
+  const textX = width / 2;
 
   context.save();
-  withRoundedRect(context, videoFrame.x, videoFrame.y, videoFrame.width, videoFrame.height, 36);
-  context.strokeStyle = "rgba(255,255,255,0.1)";
-  context.lineWidth = 2;
-  context.stroke();
+  context.textAlign = "center";
+  context.textBaseline = "top";
+  context.shadowColor = "rgba(0,0,0,0.86)";
+  context.shadowBlur = 18;
+  context.lineJoin = "round";
+  context.miterLimit = 2;
+  context.strokeStyle = "#001a3d";
+  context.lineWidth = 9;
+  context.font = `400 ${headlineLayout.fontSize}px "${font}"`;
+  headlineLayout.lines.forEach((line, index) => {
+    context.strokeText(line, textX, textTop + headlineLayout.lineHeight * index);
+  });
+  context.fillStyle = "#ffc019";
+  drawTextLines(context, headlineLayout.lines, textX, textTop, headlineLayout.lineHeight);
+
+  if (subheadline) {
+    const subheadlineTop = textTop + headlineLayout.lines.length * headlineLayout.lineHeight + gap;
+    context.font = `400 ${subheadlineLayout.fontSize}px "${font}"`;
+    context.strokeStyle = "rgba(0,0,0,0.88)";
+    context.lineWidth = 7;
+    subheadlineLayout.lines.forEach((line, index) => {
+      context.strokeText(line, textX, subheadlineTop + subheadlineLayout.lineHeight * index);
+    });
+    context.fillStyle = "#ffffff";
+    drawTextLines(context, subheadlineLayout.lines, textX, subheadlineTop, subheadlineLayout.lineHeight);
+  }
   context.restore();
+}
+
+function drawThrivingTnVideoTemplate(context, options) {
+  const { article, design, media, width, height } = options;
+  const { headline, subheadline } = buildDisplayCopy(article, design);
+  const templateImage = getLoadedVideoTemplateAsset("thriving-tn");
+  const headingFont = "Squad";
+  const bodyFont = "Open Sans ExtraBold";
+
+  context.fillStyle = "#ffffff";
+  context.fillRect(0, 0, width, height);
+
+  if (media) {
+    context.save();
+    context.filter = "brightness(0.96) contrast(1.04) saturate(1.04)";
+    drawMediaCover(context, media, 0, 0, width, height, 0.5, 0.5, 1);
+    context.restore();
+  }
+
+  if (templateImage) {
+    drawImageCover(context, templateImage, 0, 0, width, height);
+  }
+
+  const headlineLayout = fitTextBlock(context, headline, {
+    fontFamily: headingFont,
+    fontWeight: 700,
+    maxFontSize: 76,
+    minFontSize: 42,
+    maxWidth: width - 128,
+    maxLines: 3,
+    lineHeightRatio: 0.94
+  });
+  const subheadlineLayout = fitTextBlock(context, subheadline, {
+    fontFamily: bodyFont,
+    fontWeight: 800,
+    maxFontSize: 34,
+    minFontSize: 24,
+    maxWidth: width - 152,
+    maxLines: 3,
+    lineHeightRatio: 1.18
+  });
+  const headlineTop = 176;
+  const subheadlineTop = headlineTop + headlineLayout.lines.length * headlineLayout.lineHeight + 24;
+
+  context.save();
+  context.textAlign = "center";
+  context.textBaseline = "top";
+  context.lineJoin = "round";
+  context.shadowColor = "rgba(255,255,255,0.7)";
+  context.shadowBlur = 8;
+  context.strokeStyle = "#ffffff";
+  context.lineWidth = 8;
+  context.font = `700 ${headlineLayout.fontSize}px "${headingFont}"`;
+  headlineLayout.lines.forEach((line, index) => {
+    context.strokeText(line, width / 2, headlineTop + headlineLayout.lineHeight * index);
+  });
+  context.fillStyle = "#f50707";
+  drawTextLines(context, headlineLayout.lines, width / 2, headlineTop, headlineLayout.lineHeight);
+
+  if (subheadline) {
+    context.shadowBlur = 0;
+    context.strokeStyle = "#ffffff";
+    context.lineWidth = 5;
+    context.font = `800 ${subheadlineLayout.fontSize}px "${bodyFont}"`;
+    subheadlineLayout.lines.forEach((line, index) => {
+      context.strokeText(line, width / 2, subheadlineTop + subheadlineLayout.lineHeight * index);
+    });
+    context.fillStyle = "#111111";
+    drawTextLines(context, subheadlineLayout.lines, width / 2, subheadlineTop, subheadlineLayout.lineHeight);
+  }
+  context.restore();
+}
+
+export function drawVideoOverlayTemplate(context, options) {
+  const { width, height, videoTemplate = "tamil-buzz" } = options;
+
+  context.clearRect(0, 0, width, height);
+
+  if (videoTemplate === "thriving-tn") {
+    drawThrivingTnVideoTemplate(context, options);
+    return;
+  }
+
+  drawTamilBuzzVideoTemplate(context, options);
 }
 
 export function drawInstagramTemplate(context, options) {

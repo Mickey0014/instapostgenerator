@@ -4,9 +4,10 @@ import {
   buildProxyAssetUrl,
   drawVideoOverlayTemplate,
   ensureCanvasFontsLoaded,
-  INSTAGRAM_EXPORT_ASPECT_CLASS,
-  INSTAGRAM_EXPORT_HEIGHT,
-  INSTAGRAM_EXPORT_WIDTH
+  ensureVideoTemplateAssetsLoaded,
+  INSTAGRAM_REEL_ASPECT_CLASS,
+  INSTAGRAM_REEL_HEIGHT,
+  INSTAGRAM_REEL_WIDTH
 } from "../lib/postRenderer";
 
 function parseTimestamp(value) {
@@ -101,8 +102,9 @@ export default function VideoStudio({
   const [error, setError] = useState("");
   const [resolvedSourceVideoUrl, setResolvedSourceVideoUrl] = useState("");
   const [loadingSourceVideo, setLoadingSourceVideo] = useState(true);
+  const selectedVideoTemplate = videoOptions.template || "tamil-buzz";
 
-  const sourceVideoCandidates = useMemo(
+const sourceVideoCandidates = useMemo(
     () =>
       Array.from(
         new Set(
@@ -154,6 +156,16 @@ export default function VideoStudio({
     };
   }, [sourceVideoCandidates]);
 
+  useEffect(() => {
+    setRenderedVideoUrl((currentUrl) => {
+      if (currentUrl) {
+        URL.revokeObjectURL(currentUrl);
+      }
+
+      return "";
+    });
+  }, [selectedVideoTemplate]);
+
   if (!article.video?.url) {
     return null;
   }
@@ -175,7 +187,12 @@ export default function VideoStudio({
         throw new Error("The extracted video is not playable in this browser yet.");
       }
 
-      await ensureCanvasFontsLoaded(settings.fontFamily);
+      await ensureCanvasFontsLoaded(settings.fontFamily, [
+        "Baloo Thambi",
+        "Open Sans ExtraBold",
+        "Squad"
+      ]);
+      await ensureVideoTemplateAssetsLoaded();
 
       const startSeconds = parseTimestamp(videoOptions.startTime);
       const endSeconds = parseTimestamp(videoOptions.endTime);
@@ -210,8 +227,8 @@ export default function VideoStudio({
       }
 
       const canvas = document.createElement("canvas");
-      canvas.width = INSTAGRAM_EXPORT_WIDTH;
-      canvas.height = INSTAGRAM_EXPORT_HEIGHT;
+      canvas.width = INSTAGRAM_REEL_WIDTH;
+      canvas.height = INSTAGRAM_REEL_HEIGHT;
       const context = canvas.getContext("2d");
 
       const canvasStream = canvas.captureStream(30);
@@ -260,6 +277,7 @@ export default function VideoStudio({
             settings,
             media: video,
             mediaMeta: null,
+            videoTemplate: selectedVideoTemplate,
             width: canvas.width,
             height: canvas.height
           });
@@ -336,6 +354,29 @@ export default function VideoStudio({
         </div>
 
         <div className="mt-4 grid gap-4">
+          <div>
+            <span className="mb-2 block text-xs uppercase tracking-[0.24em] text-slate">Template</span>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {[
+                { value: "tamil-buzz", label: "Tamil Buzz" },
+                { value: "thriving-tn", label: "Thriving Tamil Nadu" }
+              ].map((template) => (
+                <button
+                  key={template.value}
+                  type="button"
+                  onClick={() => onVideoOptionsChange({ template: template.value })}
+                  className={`rounded-[18px] border px-4 py-3 text-left text-sm font-semibold transition ${
+                    selectedVideoTemplate === template.value
+                      ? "border-sky/70 bg-sky/15 text-sky"
+                      : "border-white/10 bg-white/5 text-slate-200 hover:border-white/25"
+                  }`}
+                >
+                  {template.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <label className="block">
             <span className="mb-2 block text-xs uppercase tracking-[0.24em] text-slate">Headline</span>
             <input
@@ -367,11 +408,11 @@ export default function VideoStudio({
               controls
               playsInline
               poster={article.video?.poster ? buildProxyAssetUrl(article.video.poster) : ""}
-              className={`${INSTAGRAM_EXPORT_ASPECT_CLASS} w-full rounded-[24px] border border-white/10 bg-ink object-contain`}
+              className={`${INSTAGRAM_REEL_ASPECT_CLASS} w-full rounded-[24px] border border-white/10 bg-ink object-contain`}
             />
           ) : (
             <div
-              className={`flex ${INSTAGRAM_EXPORT_ASPECT_CLASS} items-center justify-center rounded-[24px] border border-dashed border-white/10 bg-ink/40 p-6 text-center text-sm leading-6 text-slate`}
+              className={`flex ${INSTAGRAM_REEL_ASPECT_CLASS} items-center justify-center rounded-[24px] border border-dashed border-white/10 bg-ink/40 p-6 text-center text-sm leading-6 text-slate`}
             >
               {loadingSourceVideo
                 ? "Checking extracted video sources..."
@@ -388,7 +429,7 @@ export default function VideoStudio({
                 src={renderedVideoUrl}
                 controls
                 playsInline
-                className={`${INSTAGRAM_EXPORT_ASPECT_CLASS} w-full rounded-[24px] border border-white/10 bg-ink object-contain`}
+                className={`${INSTAGRAM_REEL_ASPECT_CLASS} w-full rounded-[24px] border border-white/10 bg-ink object-contain`}
               />
               <a
                 href={renderedVideoUrl}
@@ -400,7 +441,7 @@ export default function VideoStudio({
             </>
           ) : (
             <div
-              className={`flex ${INSTAGRAM_EXPORT_ASPECT_CLASS} items-center justify-center rounded-[24px] border border-dashed border-white/10 bg-ink/40 p-6 text-center text-sm leading-6 text-slate`}
+              className={`flex ${INSTAGRAM_REEL_ASPECT_CLASS} items-center justify-center rounded-[24px] border border-dashed border-white/10 bg-ink/40 p-6 text-center text-sm leading-6 text-slate`}
             >
               Rendered clips will appear here after export.
             </div>
